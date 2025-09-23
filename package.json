@@ -1,0 +1,12 @@
+{
+    "name": "com.SproutingGames.Sprouts.ETB",
+    "version": "1.3.2",
+    "displayName": "SproutsETB",
+    "description": "A base for editor tools!",
+    "unity": "6000",
+    "author": {
+      "name": "TheGreenSprout",
+      "email": "sprouting.games@gmail.com",
+      "url": "https://sprouts-garden.netlify.app"
+    }
+  }
