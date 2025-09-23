@@ -1,0 +1,6 @@
+EditorPrefAttribute (Custom Attributes, Unity Methods):
+	+ Haven't read or understood code. This is a non ai field bud
+	+ Maybe add support for object type in the editorpref functions?
+
++ Lists' code is so messy, see if theres any way to shorten it.
++ Add a button that can receive an Action<int> instead of only an action.
