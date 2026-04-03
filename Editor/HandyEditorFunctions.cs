@@ -50,6 +50,11 @@ namespace SETB
             #endif
 
 
+            #if !UNITY_EDITOR
+            throw new InvalidOperationException("FindAssetByName can only be used in the Unity Editor.");
+            #endif
+
+
             return null;
         }
 
@@ -71,7 +76,6 @@ namespace SETB
             }
 
 
-            // Try UnityEditor.AudioUtil via reflection
             var audioUtilType = typeof(AudioImporter).Assembly.GetType("UnityEditor.AudioUtil");
 
             if (audioUtilType != null)
@@ -99,7 +103,7 @@ namespace SETB
             }
 
 
-            // Fallback, play default beep
+            // Fallback
             Debug.LogWarning("Could not find AudioUtil.PlayPreviewClip; playing default beep.");
 
             EditorApplication.Beep();
@@ -190,10 +194,7 @@ namespace SETB
 
                 TrackKey(newKey);
             }
-            else
-            {
-                newKey = key;
-            }
+            else newKey = key;
 
             if (typeof(T) == typeof(string))
             {
@@ -230,7 +231,7 @@ namespace SETB
             }
             else if (typeof(T).IsEnum)
             {
-                EditorPrefs.SetString(newKey, (string)(object)value);
+                EditorPrefs.SetString(newKey, value.ToString());
             }
             else if (!typeof(T).IsSerializable)
             {
@@ -256,10 +257,7 @@ namespace SETB
         #endregion
         public static T GetEditorPref<T>(string key, bool localized = true, T defaultValue = default)
         {
-            if (!HasEditorPref(key, localized))
-            {
-                return default;
-            }
+            if (!HasEditorPref(key, localized)) return defaultValue;
 
 
             string newKey = localized ? LocalizeString(key) : key;
@@ -295,7 +293,7 @@ namespace SETB
             }
             else if (typeof(T) == typeof(Color))
             {
-                string hex = GetEditorPref(key, localized, ((Color)(object)defaultValue).ToString());
+                string hex = EditorPrefs.GetString(newKey, ColorUtility.ToHtmlStringRGBA((Color)(object)defaultValue));
 
                 if (ColorUtility.TryParseHtmlString("#" + hex, out var color))
                 {
@@ -325,10 +323,7 @@ namespace SETB
                 try { return JsonUtility.FromJson<T>(json); }
                 catch { return defaultValue; }
             }
-            else
-            {
-                throw new NotSupportedException($"Type {typeof(T)} is not supported by GetEditorPref and isn't Serializable.");
-            }
+            else throw new NotSupportedException($"Type {typeof(T)} is not supported by GetEditorPref and isn't Serializable.");
         }
 
 
@@ -341,10 +336,7 @@ namespace SETB
         #endregion
         public static void DeleteEditorPref(string key, bool localized = true)
         {
-            if (!HasEditorPref(key, localized))
-            {
-                return;
-            }
+            if (!HasEditorPref(key, localized)) return;
 
 
             string newKey;
@@ -354,10 +346,7 @@ namespace SETB
 
                 DeTrackKey(newKey);
             }
-            else
-            {
-                newKey = key;
-            }
+            else newKey = key;
 
             EditorPrefs.DeleteKey(newKey);
         }
@@ -376,10 +365,7 @@ namespace SETB
 
             foreach (string key in keys)
             {
-                if (HasEditorPref(key, false))
-                {
-                    EditorPrefs.DeleteKey(key);
-                }
+                if (HasEditorPref(key, false)) EditorPrefs.DeleteKey(key);
             }
 
 
@@ -399,5 +385,216 @@ namespace SETB
             return ProjectKey + "_" + key;
         }
         #endregion
+    
+    
+        
+        #region Custom Classes Logic
+        #region XML doc
+        /// <summary>
+        /// Instantiates a popup window.
+        /// </summary>
+        /// <param name="message">The message to display in this popup.</param>
+        /// <param name="width">The width of the popup.</param>
+        /// <param name="height">The height of the popup.</param>
+        /// <param name="options">The PopupOptions of this popup.</param>
+        #endregion
+        public static BasicPopup PopupWindow(string message, float width, float height, PopupOptions options)
+        {
+            if (options == null) options = new PopupOptions();
+
+
+            BasicPopup popup = ScriptableObject.CreateInstance<BasicPopup>();
+
+            popup.CreatePopup(message, width, height, options.Title, options.CloseButtonText, options.Sound, options.Silent, options.Image, options.ImageWidth, options.ImageHeight, options.Centered, options.Locked);
+            
+            return popup;
+        }
+        #endregion
+
+
+
+        #region Custom Attributes Logic
+        #region XML doc
+        /// <summary>
+        /// Loads all the tracked EditorPrefs on enable.
+        /// </summary>
+        #endregion
+        public static void Load_AttributeEditorPrefs<T>(this T obj) where T : UnityEngine.Object
+        {
+            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            foreach (var field in fields)
+            {
+                var attr = field.GetCustomAttribute<EditorPrefAttribute>();
+                if (attr == null) continue;
+
+                Type fieldType = field.FieldType;
+                object defaultValue = attr.DefaultValue;
+
+                // Use reflection to call your generic GetEditorPref<T>
+                MethodInfo method = typeof(HandyEditorFunctions)
+                    .GetMethod(nameof(GetEditorPref), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                    .MakeGenericMethod(fieldType);
+
+                object value = method.Invoke(null, new object[] { attr.Key, true, defaultValue });
+                field.SetValue(obj, value);
+            }
+        }
+
+        #region XML doc
+        /// <summary>
+        /// Saves all the tracked EditorPrefs on enable.
+        /// </summary>
+        #endregion
+        public static void Save_AttributeEditorPrefs<T>(this T obj) where T : UnityEngine.Object
+        {
+            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            foreach (var field in fields)
+            {
+                var attr = field.GetCustomAttribute<EditorPrefAttribute>();
+                if (attr == null) continue;
+
+                Type fieldType = field.FieldType;
+                object value = field.GetValue(obj);
+
+                // Use reflection to call your generic SetEditorPref<T>
+                MethodInfo method = typeof(HandyEditorFunctions)
+                    .GetMethod(nameof(SetEditorPref), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
+                    .MakeGenericMethod(fieldType);
+
+                method.Invoke(null, new object[] { attr.Key, value, true });
+            }
+        }
+        #endregion
     }
+
+
+
+
+    #region Custom Classes
+    public class PopupOptions
+    {
+        public string Title { get; set; } = "PopUp";
+
+        public string CloseButtonText { get; set; } = "OK";
+
+
+        public AudioClip Sound { get; set; } = null;
+
+        public bool Silent { get; set; } = false;
+
+
+        public Texture2D Image { get; set; } = null;
+
+        public float ImageWidth { get; set; } = 64;
+        public float ImageHeight { get; set; } = 64;
+
+
+        public bool Centered { get; set; } = true;
+        public bool Locked { get; set; } = true;
+    }
+
+
+    public class BasicPopup : EditorWindow_Base<BasicPopup>
+    {
+        private string message;
+
+        private string closeButtonText;
+
+
+        private AudioClip sound;
+
+        private Texture2D image;
+
+
+        private float windowWidth;
+        //private float windowHeight;
+
+        private float imageWidth;
+        private float imageHeight;
+
+
+
+        public void CreatePopup(string m, float width, float height, string title = "PopUp", string c = "OK", AudioClip s = null, bool silentWindow = false, Texture2D i = null, float w = 64, float h = 64, bool centered = true, bool locked = true)
+        {
+            message = m;
+            windowWidth = width;
+            //windowHeight = height;
+            closeButtonText = c;
+            sound = s;
+            image = i;
+            imageWidth = w;
+            imageHeight = h;
+
+
+            CreateUtilityWindow(title, centered, locked, width, height, width, height);
+
+
+            if (!silentWindow)
+            {
+                HandyEditorFunctions.TryPlaySound(sound);
+            }
+        }
+
+
+        protected void OnGUI()
+        {
+            GUILayout.Space(20);
+
+
+            if (image != null)
+            {
+                GUILayout.BeginHorizontal();
+                GUILayout.FlexibleSpace();
+
+                GUILayout.Label(image, GUILayout.Width(imageWidth), GUILayout.Height(imageHeight));
+
+                GUILayout.FlexibleSpace();
+                GUILayout.EndHorizontal();
+            }
+
+
+            GUILayout.Space(10);
+
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            GUILayout.Label(
+                message,
+                new GUIStyle(EditorStyles.wordWrappedLabel) { alignment = TextAnchor.MiddleCenter },
+                GUILayout.Width(windowWidth)
+            );
+            GUILayout.FlexibleSpace();
+            GUILayout.EndHorizontal();
+
+
+            GUILayout.FlexibleSpace();
+
+            if (GUILayout.Button(closeButtonText))
+            {
+                Close();
+            }
+        }
+    }
+    #endregion
+
+
+
+    #region Custom Attributes
+    [AttributeUsage(AttributeTargets.Field)]
+    public class EditorPrefAttribute : Attribute
+    {
+        public string Key { get; }
+
+        public object DefaultValue { get; }
+
+
+        public EditorPrefAttribute(string key, object defaultValue = default)
+        {
+            Key = key;
+
+            DefaultValue = defaultValue;
+        }
+    }
+    #endregion
 }
