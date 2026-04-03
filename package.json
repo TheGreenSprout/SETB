@@ -1,11 +1,18 @@
 {
     "name": "com.sproutinggames.sprouts.etb",
-    "version": "2.1.0",
+    "version": "2.1.2",
     "displayName": "SproutsETB",
     "description": "A base for editor tools!",
     "author": {
       "name": "TheGreenSprout",
       "email": "sprouting.games@gmail.com",
       "url": "https://sprouts-garden.netlify.app"
+    },
+    "samples": [
+    {
+      "displayName": "Example Tools",
+      "description": "A set of example scripts using the provided bases.",
+      "path": "Samples~/ExampleTools"
     }
+  ]
   }
