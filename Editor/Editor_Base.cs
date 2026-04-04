@@ -5,7 +5,7 @@ using static SETB.EditorGUI_Base;
 
 namespace SETB
 {
-    public abstract class Editor_Base<T> : Editor where T : Object
+    public abstract class Editor_Base<T> : Editor where T : Editor
     {
         #region Variables
         private string cacheSaveStr = "";

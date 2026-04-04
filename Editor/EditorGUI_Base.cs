@@ -76,7 +76,7 @@ namespace SETB
         /// </summary>
         /// <param name="size">The size of the space.</param>
         #endregion
-        public static void Space(float size) => EditorGUILayout.Space(size);
+        public static void Space(float size = 6f, bool expand = true) => EditorGUILayout.Space(size, expand);
 
         #region XML doc
         /// <summary>

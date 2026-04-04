@@ -6,7 +6,7 @@ using static SETB.EditorGUI_Base;
 
 namespace SETB
 {
-    public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : UnityEngine.Object
+    public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : PropertyDrawer
     {
         #region Variables
         private string cacheSaveStr = "";
