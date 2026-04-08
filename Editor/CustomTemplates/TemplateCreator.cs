@@ -15,16 +15,15 @@ namespace SETB.CustomTemplates
 
 
             string folder = GetSelectedPathOrFallback();
-            string filePath = AssetDatabase.GenerateUniqueAssetPath(
-                Path.Combine(folder, defaultFileName)
+
+            string fileName = defaultFileName;
+            string templateText = template;
+
+            
+            ProjectWindowUtil.CreateAssetWithContent(
+                Path.Combine(folder, fileName),
+                templateText
             );
-
-            template = template.Replace("#SCRIPTNAME#", Path.GetFileNameWithoutExtension(filePath));
-
-            File.WriteAllText(filePath, template);
-
-
-            AssetDatabase.Refresh();
         }
 
 
