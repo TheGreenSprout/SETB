@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEditor;
 using System.IO;
+using UnityEditor.ProjectWindowCallback;
+using UnityEngine.UI;
 
 namespace SETB.CustomTemplates
 {
@@ -15,14 +17,20 @@ namespace SETB.CustomTemplates
 
 
             string folder = GetSelectedPathOrFallback();
+            string path = Path.Combine(folder, defaultFileName);
 
-            string fileName = defaultFileName;
-            string templateText = template;
+            var endNameEdit = ScriptableObject.CreateInstance<CreateTemplateScriptAction>();
+            endNameEdit.templateText = template;
 
-            
-            ProjectWindowUtil.CreateAssetWithContent(
-                Path.Combine(folder, fileName),
-                templateText
+            var icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
+
+
+            ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
+                0,
+                endNameEdit,
+                path,
+                icon,
+                null
             );
         }
 
@@ -76,5 +84,25 @@ namespace SETB.CustomTemplates
         [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Script", false, 80)]
         public static void Create_PropertyDrawerScript() => CreateScriptFromTemplate("PropertyDrawer_ScriptTemplate", "NewPropertyDrawerScript.cs");
         #endregion
+    }
+
+
+
+    public class CreateTemplateScriptAction : EndNameEditAction
+    {
+        public string templateText;
+
+
+
+
+        public override void Action(int instanceId, string pathName, string resourceFile)
+        {
+            string finalText = templateText.Replace("#SCRIPTNAME#", Path.GetFileNameWithoutExtension(pathName));
+
+            File.WriteAllText(pathName, finalText);
+
+
+            AssetDatabase.ImportAsset(pathName);
+        }
     }
 }
