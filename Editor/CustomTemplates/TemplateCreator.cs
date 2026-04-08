@@ -30,7 +30,7 @@ namespace SETB.CustomTemplates
 
         private static string LoadTemplate(string templateName)
         {
-            string packagePath = $"Packages/com.yourname.yourpackage/Editor/CustomTemplates/Resources/SETB_Templates/{templateName}";
+            string packagePath = $"Packages/com.sproutinggames.sprouts.etb/Editor/CustomTemplates/Resources/SETB_Templates/{templateName}.txt";
             var templateAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(packagePath);
 
             if (templateAsset != null) return templateAsset.text;
@@ -67,15 +67,15 @@ namespace SETB.CustomTemplates
 
         #region Template Creation Methods
         [MenuItem("Assets/Create/Scripting/SETB/EditorWindow Script", false, 80)]
-        public static void Create_EditorWindowScript() => CreateScriptFromTemplate("EditorWindow_ScriptTemplate.txt", "NewEditorWindowScript.cs");
+        public static void Create_EditorWindowScript() => CreateScriptFromTemplate("EditorWindow_ScriptTemplate", "NewEditorWindowScript.cs");
 
 
         [MenuItem("Assets/Create/Scripting/SETB/Editor Script", false, 80)]
-        public static void Create_EditorScript() => CreateScriptFromTemplate("Editor_ScriptTemplate.txt", "NewEditorScript.cs");
+        public static void Create_EditorScript() => CreateScriptFromTemplate("Editor_ScriptTemplate", "NewEditorScript.cs");
 
 
         [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Script", false, 80)]
-        public static void Create_PropertyDrawerScript() => CreateScriptFromTemplate("PropertyDrawer_ScriptTemplate.txt", "NewPropertyDrawerScript.cs");
+        public static void Create_PropertyDrawerScript() => CreateScriptFromTemplate("PropertyDrawer_ScriptTemplate", "NewPropertyDrawerScript.cs");
         #endregion
     }
 }
