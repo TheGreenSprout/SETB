@@ -1,0 +1,17 @@
+using UnityEngine;
+using UnityEditor;
+
+using SETB;
+using static SETB.EditorGUI_Base;
+using static SETB.HandyEditorFunctions;
+
+//[CustomEditor(typeof(ClassName), true /*Children Scripts are affected*/)]
+public class Editor_ScriptTemplate : Editor_Base<Editor_ScriptTemplate>
+{
+    protected override void DrawInspector()
+    {
+        base.DrawInspector(); // Draws the default inspector. Remove this line if you don't want that.
+
+        // Your custom inspector code goes here.
+    }
+}

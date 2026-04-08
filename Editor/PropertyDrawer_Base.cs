@@ -1,17 +1,86 @@
 using System;
 using System.Collections.Generic;
+using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
-using static SETB.EditorGUI_Base;
+
+using static SETB.HandyEditorFunctions;
 
 namespace SETB
 {
-    public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : PropertyDrawer
+    public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : PropertyDrawer_Base<T>
     {
         #region Variables
-        private string cacheSaveStr = "";
+        protected struct LayoutContext
+        {
+            public Rect position;
+            public float y;
 
-        private Dictionary<string, float> cacheScoreDictionary = new Dictionary<string, float>();
+            public LayoutContext(Rect position)
+            {
+                this.position = position;
+                this.y = position.y;
+            }
+
+            public Rect GetRect(float height)
+            {
+                Rect r = new Rect(position.x, y, position.width, height);
+                y += height + EditorGUIUtility.standardVerticalSpacing;
+                return r;
+            }
+
+            public void Space(float height)
+            {
+                y += height + EditorGUIUtility.standardVerticalSpacing;
+            }
+
+            public float HeightUsed => y - position.y;
+        }
+
+
+
+        protected LayoutContext ctx;
+        protected bool isDrawing;
+
+
+        protected SerializedProperty targetProperty;
+        protected UnityEngine.Object target => targetProperty?.serializedObject.targetObject;
+
+
+
+        private static Dictionary<string, Dictionary<string, object>> stateCache = new();
+
+        protected E GetState<E>(SerializedProperty property, string key, E defaultValue = default)
+        {
+            string path = property.propertyPath;
+
+            if (!stateCache.TryGetValue(path, out var dict))
+            {
+                dict = new Dictionary<string, object>();
+                stateCache[path] = dict;
+            }
+
+            if (!dict.TryGetValue(key, out var value))
+            {
+                dict[key] = defaultValue;
+                return defaultValue;
+            }
+
+            return (E)value;
+        }
+
+        protected void SetState<E>(SerializedProperty property, string key, E value)
+        {
+            string path = property.propertyPath;
+
+            if (!stateCache.TryGetValue(path, out var dict))
+            {
+                dict = new Dictionary<string, object>();
+                stateCache[path] = dict;
+            }
+
+            dict[key] = value;
+        }
         #endregion
 
 
@@ -22,118 +91,185 @@ namespace SETB
         {
             EditorGUI.BeginProperty(position, label, property);
 
-            DrawProperty(position, property, label);
+
+            if (targetProperty == null) targetProperty = property;
+
+
+            position = EditorGUI.PrefixLabel(position, label);
+
+
+            Indent(() =>
+            {
+                ctx = new LayoutContext(position);
+                isDrawing = true;
+
+                Draw(property);
+
+                isDrawing = false;
+            });
+
 
             EditorGUI.EndProperty();
         }
 
-        protected virtual void DrawProperty(Rect position, SerializedProperty property, GUIContent label) => EditorGUI.PropertyField(position, property, label, true);
+        
+        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
+        {
+            LayoutContext context = new LayoutContext(new Rect(0, 0, EditorGUIUtility.currentViewWidth, 0));
+            
+            Build(property);
 
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label) => EditorGUI.GetPropertyHeight(property, label, true);
+            return context.HeightUsed;
+        }
+        #endregion
+
+
+
+        #region Override Points
+        protected virtual void Draw(SerializedProperty property) => DrawProperty(property, true);
+
+        protected virtual void Build(SerializedProperty property) => ctx.Space(EditorGUI.GetPropertyHeight(property, true));
         #endregion
 
 
 
         #region GUI Helpers
-        protected Rect Line(ref Rect position, float? height = null)
-        {
-            if (height == null) height = EditorGUIUtility.singleLineHeight;
+            #region Layout Helpers
+            protected Rect GetLastRect(float height) => new Rect(ctx.position.x, ctx.y, ctx.position.width, height);
 
-            
-            Rect r = new Rect(position.x, position.y, position.width, height.Value);
-            position.y += height.Value + EditorGUIUtility.standardVerticalSpacing;
-            return r;
+
+            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null)
+            {
+                float h = EditorGUI.GetPropertyHeight(prop, includeChildren);
+                Rect r = ctx.GetRect(h);
+
+                if (label == null) EditorGUI.PropertyField(r, prop, includeChildren);
+                else EditorGUI.PropertyField(r, prop, new GUIContent(label), includeChildren);
+            }
+
+
+            protected void Space(float height = 6f) => ctx.Space(height);
+
+            public void SetIndent(int indent) => EditorGUI_Base.SetIndent(indent);
+            public void IterateIndent(int iteration) => EditorGUI_Base.IterateIndent(iteration);
+            public int GetIndent() => EditorGUI_Base.GetIndent();
+            protected void Indent(Action action) => EditorGUI_Base.Indent(action);
+            #endregion
+
+
+
+            #region Text Display
+            protected void DrawLabel(string text)
+            {
+                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+                EditorGUI.LabelField(r, text);
+            }
+
+
+            protected void DrawBox(string text)
+            {
+                float h = EditorGUIUtility.singleLineHeight * 1.5f;
+                Rect r = ctx.GetRect(h);
+                EditorGUI.HelpBox(r, text, MessageType.None);
+            }
+
+            protected void DrawHelpBox(string text, MessageType type)
+            {
+                float h = EditorGUIUtility.singleLineHeight * 2f;
+                Rect r = ctx.GetRect(h);
+                EditorGUI.HelpBox(r, text, type);
+            }
+            #endregion
+
+
+
+            #region With Logic
+            protected void DrawButton(string label, Action logic)
+            {
+                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+
+                if (GUI.Button(r, label)) logic?.Invoke();
+            }
+
+
+            protected void DrawFoldout(SerializedProperty property, Action logic, string label = null, GUIStyle style = null)
+            {
+                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+
+                property.isExpanded = EditorGUI.Foldout(
+                    r,
+                    property.isExpanded,
+                    label ?? property.displayName,
+                    true,
+                    style ?? EditorStyles.foldout
+                );
+
+                if (property.isExpanded) logic?.Invoke();
+            }
+            #endregion
+        #endregion
+
+
+
+        #region Misc
+        protected SerializedProperty Find(string relativePath) => targetProperty.FindPropertyRelative(relativePath);
+
+
+        protected E GetValue<E>(string relativePath)
+        {
+            var prop = Find(relativePath);
+
+            return prop switch
+            {
+                { propertyType: SerializedPropertyType.Integer } => (E)(object)prop.intValue,
+                { propertyType: SerializedPropertyType.Float } => (E)(object)prop.floatValue,
+                { propertyType: SerializedPropertyType.Boolean } => (E)(object)prop.boolValue,
+                { propertyType: SerializedPropertyType.String } => (E)(object)prop.stringValue,
+                _ => default
+            };
+        }
+
+        protected void SetValue<E>(string relativePath, T value)
+        {
+            var prop = Find(relativePath);
+
+            switch (prop.propertyType)
+            {
+                case SerializedPropertyType.Integer:
+                    prop.intValue = Convert.ToInt32(value);
+                    break;
+                    
+                case SerializedPropertyType.Float:
+                    prop.floatValue = Convert.ToSingle(value);
+                    break;
+
+                case SerializedPropertyType.Boolean:
+                    prop.boolValue = Convert.ToBoolean(value);
+                    break;
+
+                case SerializedPropertyType.String:
+                    prop.stringValue = value?.ToString();
+                    break;
+            }
         }
 
 
-        protected void DrawLabel(Rect rect, string text) => EditorGUI.LabelField(rect, text);
-
-
-        protected void DrawButton(Rect rect, string label, Action action)
+        protected bool BeginChangeCheck()
         {
-            if (GUI.Button(rect, label)) action?.Invoke();
-        }
-        
-        protected void DrawPropertyField(Rect rect, SerializedProperty prop, string label = null)
-        {
-            if (label == null) EditorGUI.PropertyField(rect, prop, GUIContent.none);
-            else EditorGUI.PropertyField(rect, prop, new GUIContent(label));
+            EditorGUI.BeginChangeCheck();
+            return true;
         }
 
-
-        protected void DrawFoldout(Rect rect, string title, ref bool state, Action logic, GUIStyle style = null, bool toggleOnClick = true)
+        protected bool EndChangeCheck(SerializedProperty property)
         {
-            if (state = EditorGUI.Foldout(rect, state, title, toggleOnClick, style)) logic?.Invoke();
+            if (EditorGUI.EndChangeCheck())
+            {
+                property.serializedObject.ApplyModifiedProperties();
+                return true;
+            }
+            return false;
         }
-        #endregion
-        
-
-
-        #region Proxy
-        #region XML doc
-        /// <summary>
-        /// Creates a searchable list.
-        /// </summary>
-        /// <param name="label">The name of the list.</param>
-        /// <param name="searchLabel">The name of the search field.</param>
-        /// <param name="items">The list of items to be displayed.</param>
-        /// <param name="searchStr">The search string.</param>
-        /// <param name="delayedSearch">Whether the input field waits for the user to press enter/click away from the field to change the variable or not.</param>
-        /// <param name="styles">The list of GUIStyles for the list.</param>
-        /// <param name="options">The list's GUILayoutOptions list.</param>
-        #endregion
-        public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, delayedSearch, styles, options);
-        
-        #region XML doc
-        /// <summary>
-        /// Creates a foldable searchable list.
-        /// </summary>
-        /// <param name="label">The name of the list.</param>
-        /// <param name="searchLabel">The name of the search field.</param>
-        /// <param name="items">The list of items to be displayed.</param>
-        /// <param name="searchStr">The search string.</param>
-        /// <param name="foldoutBool">The boolean that controls the fold.</param>
-        /// <param name="delayedSearch">Whether the input field waits for the user to press enter/click away from the field to change the variable or not.</param>
-        /// <param name="styles">The list of GUIStyles for the list.</param>
-        /// <param name="options">The list's GUILayoutOptions list.</param>
-        #endregion
-        public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, delayedSearch, styles, options);
-        
-        #region XML doc
-        /// <summary>
-        /// Creates a scrollable searchable list.
-        /// </summary>
-        /// <param name="label">The name of the list.</param>
-        /// <param name="searchLabel">The name of the search field.</param>
-        /// <param name="items">The list of items to be displayed.</param>
-        /// <param name="searchStr">The search string.</param>
-        /// <param name="scrollVector">The vector2 that controls the scroller.</param>
-        /// <param name="delayedSearch">Whether the input field waits for the user to press enter/click away from the field to change the variable or not.</param>
-        /// <param name="styles">The list of GUIStyles for the list.</param>
-        /// <param name="options">The list's GUILayoutOptions list.</param>
-        #endregion
-        public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref scrollVector, delayedSearch, styles, options);
-        
-        #region XML doc
-        /// <summary>
-        /// Creates a foldable, scrollable searchable list.
-        /// </summary>
-        /// <param name="label">The name of the list.</param>
-        /// <param name="searchLabel">The name of the search field.</param>
-        /// <param name="items">The list of items to be displayed.</param>
-        /// <param name="searchStr">The search string.</param>
-        /// <param name="foldoutBool">The boolean that controls the fold.</param>
-        /// <param name="scrollVector">The vector2 that controls the scroller.</param>
-        /// <param name="delayedSearch">Whether the input field waits for the user to press enter/click away from the field to change the variable or not.</param>
-        /// <param name="styles">The list of GUIStyles for the list.</param>
-        /// <param name="options">The list's GUILayoutOptions list.</param>
-        #endregion
-        public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, delayedSearch, styles, options);
         #endregion
     }
 }

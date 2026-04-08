@@ -1,6 +1,10 @@
 using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,6 +12,7 @@ namespace SETB
 {
     public static class HandyEditorFunctions
     {
+        #region Variables
         public enum AssetTypes
         {
             AudioClip,
@@ -18,7 +23,49 @@ namespace SETB
 
 
 
-        public static string ProjectKey => Application.dataPath.GetHashCode().ToString();
+        private static string ProjectGUID = null;
+
+        public static string GetProjectGUID()
+        {
+            if (!string.IsNullOrEmpty(ProjectGUID)) return ProjectGUID;
+
+
+            string path = Path.Combine(Application.dataPath, "../ProjectSettings/ProjectSettings.asset");
+
+            if (!File.Exists(path)) ProjectGUID = "UnknownProject";
+            else
+            {
+                string content = File.ReadAllText(path);
+
+                var match = Regex.Match(content, @"productGUID:\s*([a-f0-9]+)");
+
+                if (match.Success) ProjectGUID = match.Groups[1].Value;
+                else ProjectGUID = "UnknownProject";
+            }
+
+
+            return ProjectGUID;
+        }
+
+
+
+            #region EditorPrefs Cache
+            private class EditorPrefFieldData
+            {
+                public Func<UnityEngine.Object, object> GetValue;
+                public Action<UnityEngine.Object, object> SetValue;
+
+                public Func<string, object, object> Getter;
+                public Action<string, object> Setter;
+
+                public string Key;
+                public object DefaultValue;
+            }
+
+
+            private static Dictionary<Type, List<EditorPrefFieldData>> _cachedFields = new();
+            #endregion
+        #endregion
 
 
 
@@ -133,10 +180,7 @@ namespace SETB
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         /// <returns>Returns whether the EditorPref exists.</returns>
         #endregion
-        public static bool HasEditorPref(string key, bool localized = true)
-        {
-            return EditorPrefs.HasKey(localized ? LocalizeString(key) : key);
-        }
+        public static bool HasEditorPref(string key, bool localized = true, string tag = null) => EditorPrefs.HasKey(localized ? LocalizeString(key, tag) : key);
 
 
         #region XML doc
@@ -166,6 +210,7 @@ namespace SETB
         public static void DeTrackKey(string key)
         {
             string keyListKey = LocalizeString("EditorPrefsKeys");
+
             string allKeys = EditorPrefs.GetString(keyListKey, "");
             var keys = allKeys.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
@@ -185,33 +230,21 @@ namespace SETB
         /// <param name="value">The value to save.</param>
         /// <param name="localized">Whether the key is to be localized.</param>
         #endregion
-        public static void SetEditorPref<T>(string key, T value, bool localized = true)
+        public static void SetEditorPref<T>(string key, T value, bool localized = true, string tag = null)
         {
             string newKey;
             if (localized)
             {
-                newKey = LocalizeString(key);
+                newKey = LocalizeString(key, tag);
 
                 TrackKey(newKey);
             }
             else newKey = key;
 
-            if (typeof(T) == typeof(string))
-            {
-                EditorPrefs.SetString(newKey, (string)(object)value);
-            }
-            else if (typeof(T) == typeof(bool))
-            {
-                EditorPrefs.SetBool(newKey, (bool)(object)value);
-            }
-            else if (typeof(T) == typeof(int))
-            {
-                EditorPrefs.SetInt(newKey, (int)(object)value);
-            }
-            else if (typeof(T) == typeof(float))
-            {
-                EditorPrefs.SetFloat(newKey, (float)(object)value);
-            }
+            if (typeof(T) == typeof(string)) EditorPrefs.SetString(newKey, (string)(object)value);
+            else if (typeof(T) == typeof(bool)) EditorPrefs.SetBool(newKey, (bool)(object)value);
+            else if (typeof(T) == typeof(int)) EditorPrefs.SetInt(newKey, (int)(object)value);
+            else if (typeof(T) == typeof(float)) EditorPrefs.SetFloat(newKey, (float)(object)value);
             else if (typeof(T) == typeof(Vector2))
             {
                 SetEditorPref(newKey + "_x", ((Vector2)(object)value).x, false);
@@ -229,10 +262,7 @@ namespace SETB
 
                 SetEditorPref(newKey, hex, false);
             }
-            else if (typeof(T).IsEnum)
-            {
-                EditorPrefs.SetString(newKey, value.ToString());
-            }
+            else if (typeof(T).IsEnum) EditorPrefs.SetString(newKey, value.ToString());
             else if (!typeof(T).IsSerializable)
             {
                 string json = JsonUtility.ToJson(value);
@@ -255,50 +285,35 @@ namespace SETB
         /// <param name="defaultValue">The default value of this EditorPref.</param>
         /// <returns>Returns the value of the EditorPref.</returns>
         #endregion
-        public static T GetEditorPref<T>(string key, bool localized = true, T defaultValue = default)
+        public static T GetEditorPref<T>(string key, T defaultValue = default, bool localized = true, string tag = null)
         {
-            if (!HasEditorPref(key, localized)) return defaultValue;
+            if (!HasEditorPref(key, localized, tag)) return defaultValue;
 
 
-            string newKey = localized ? LocalizeString(key) : key;
+            string newKey = localized ? LocalizeString(key, tag) : key;
 
-            if (typeof(T) == typeof(string))
-            {
-                return (T)(object)EditorPrefs.GetString(newKey, (string)(object)defaultValue);
-            }
-            else if (typeof(T) == typeof(bool))
-            {
-                return (T)(object)EditorPrefs.GetBool(newKey, (bool)(object)defaultValue);
-            }
-            else if (typeof(T) == typeof(int))
-            {
-                return (T)(object)EditorPrefs.GetInt(newKey, (int)(object)defaultValue);
-            }
-            else if (typeof(T) == typeof(float))
-            {
-                return (T)(object)EditorPrefs.GetFloat(newKey, (float)(object)defaultValue);
-            }
+            if (typeof(T) == typeof(string)) return (T)(object)EditorPrefs.GetString(newKey, (string)(object)defaultValue);
+            else if (typeof(T) == typeof(bool)) return (T)(object)EditorPrefs.GetBool(newKey, (bool)(object)defaultValue);
+            else if (typeof(T) == typeof(int)) return (T)(object)EditorPrefs.GetInt(newKey, (int)(object)defaultValue);
+            else if (typeof(T) == typeof(float)) return (T)(object)EditorPrefs.GetFloat(newKey, (float)(object)defaultValue);
             else if (typeof(T) == typeof(Vector2))
             {
-                float x = GetEditorPref(newKey + "_x", false, ((Vector2)(object)defaultValue).x);
-                float y = GetEditorPref(newKey + "_y", false, ((Vector2)(object)defaultValue).y);
+                float x = GetEditorPref(newKey + "_x", ((Vector2)(object)defaultValue).x, false);
+                float y = GetEditorPref(newKey + "_y", ((Vector2)(object)defaultValue).y, false);
                 return (T)(object)new Vector2(x, y);
             }
             else if (typeof(T) == typeof(Vector3))
             {
-                float x = GetEditorPref(newKey + "_x", false, ((Vector3)(object)defaultValue).x);
-                float y = GetEditorPref(newKey + "_y", false, ((Vector3)(object)defaultValue).y);
-                float z = GetEditorPref(newKey + "_z", false, ((Vector3)(object)defaultValue).z);
+                float x = GetEditorPref(newKey + "_x", ((Vector3)(object)defaultValue).x, false);
+                float y = GetEditorPref(newKey + "_y", ((Vector3)(object)defaultValue).y, false);
+                float z = GetEditorPref(newKey + "_z", ((Vector3)(object)defaultValue).z, false);
                 return (T)(object)new Vector3(x, y, z);
             }
             else if (typeof(T) == typeof(Color))
             {
                 string hex = EditorPrefs.GetString(newKey, ColorUtility.ToHtmlStringRGBA((Color)(object)defaultValue));
 
-                if (ColorUtility.TryParseHtmlString("#" + hex, out var color))
-                {
-                    return (T)(object)color;
-                }
+                if (ColorUtility.TryParseHtmlString("#" + hex, out var color)) return (T)(object)color;
 
                 return defaultValue;
             }
@@ -306,14 +321,8 @@ namespace SETB
             {
                 string str = EditorPrefs.GetString(newKey, defaultValue.ToString());
 
-                try
-                {
-                    return (T)Enum.Parse(typeof(T), str);
-                }
-                catch
-                {
-                    return defaultValue;
-                }
+                try { return (T)Enum.Parse(typeof(T), str); }
+                catch { return defaultValue; }
             }
             else if (typeof(T).IsSerializable)
             {
@@ -334,15 +343,15 @@ namespace SETB
         /// <param name="key">The EditorPref's key (aka their "name").</param>
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         #endregion
-        public static void DeleteEditorPref(string key, bool localized = true)
+        public static void DeleteEditorPref(string key, bool localized = true, string tag = null)
         {
-            if (!HasEditorPref(key, localized)) return;
+            if (!HasEditorPref(key, localized, tag)) return;
 
 
             string newKey;
             if (localized)
             {
-                newKey = LocalizeString(key);
+                newKey = LocalizeString(key, tag);
 
                 DeTrackKey(newKey);
             }
@@ -380,12 +389,9 @@ namespace SETB
         /// <param name="key">The string to be localized.</param>
         /// <returns>Returns the localized string.</returns>
         #endregion
-        public static string LocalizeString(string key)
-        {
-            return ProjectKey + "_" + key;
-        }
+        public static string LocalizeString(string key, string tag = null) => GetProjectGUID() + "_" + (String.IsNullOrEmpty(tag) ? "" : tag + "_") + key;
         #endregion
-    
+
     
         
         #region Custom Classes Logic
@@ -414,6 +420,103 @@ namespace SETB
 
 
         #region Custom Attributes Logic
+        private static List<EditorPrefFieldData> GetCachedFields(Type type)
+        {
+            if (_cachedFields.TryGetValue(type, out var cached)) return cached;
+
+            var list = new List<EditorPrefFieldData>();
+
+            var fields = type.GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+
+            foreach (var field in fields)
+            {
+                var attr = field.GetCustomAttribute<EditorPrefAttribute>();
+                if (attr == null) continue;
+
+                var fieldType = field.FieldType;
+
+                // ---------- Compile field getter ----------
+                var objParam = Expression.Parameter(typeof(UnityEngine.Object), "obj");
+                var castObj = Expression.Convert(objParam, type);
+                var fieldAccess = Expression.Field(castObj, field);
+                var castToObject = Expression.Convert(fieldAccess, typeof(object));
+
+                var getValue = Expression.Lambda<Func<UnityEngine.Object, object>>(
+                    castToObject, objParam
+                ).Compile();
+
+                // ---------- Compile field setter ----------
+                var valueParam = Expression.Parameter(typeof(object), "value");
+                var castValue = Expression.Convert(valueParam, fieldType);
+
+                var assign = Expression.Assign(fieldAccess, castValue);
+
+                var setValue = Expression.Lambda<Action<UnityEngine.Object, object>>(
+                    assign, objParam, valueParam
+                ).Compile();
+
+                // ---------- Compile EditorPrefs getter ----------
+                var getMethod = typeof(HandyEditorFunctions)
+                    .GetMethod(nameof(HandyEditorFunctions.GetEditorPref))
+                    .MakeGenericMethod(fieldType);
+
+                var keyParam = Expression.Parameter(typeof(string), "key");
+                var defaultParam = Expression.Parameter(typeof(object), "default");
+
+                var castDefault = Expression.Convert(defaultParam, fieldType);
+
+                var tagConst = Expression.Constant(string.IsNullOrEmpty(attr.TagOverride) ? type.FullName : attr.TagOverride);
+
+                var callGet = Expression.Call(
+                    getMethod,
+                    keyParam,
+                    castDefault,
+                    Expression.Constant(true),
+                    tagConst
+                );
+
+                var castResult = Expression.Convert(callGet, typeof(object));
+
+                var getter = Expression.Lambda<Func<string, object, object>>(
+                    castResult, keyParam, defaultParam
+                ).Compile();
+
+                // ---------- Compile EditorPrefs setter ----------
+                var setMethod = typeof(HandyEditorFunctions)
+                    .GetMethod(nameof(HandyEditorFunctions.SetEditorPref))
+                    .MakeGenericMethod(fieldType);
+
+                var valueParam2 = Expression.Parameter(typeof(object), "value");
+                var castValue2 = Expression.Convert(valueParam2, fieldType);
+
+                var callSet = Expression.Call(
+                    setMethod,
+                    keyParam,
+                    castValue2,
+                    Expression.Constant(true),
+                    tagConst
+                );
+
+                var setter = Expression.Lambda<Action<string, object>>(
+                    callSet, keyParam, valueParam2
+                ).Compile();
+
+                list.Add(new EditorPrefFieldData
+                {
+                    GetValue = getValue,
+                    SetValue = setValue,
+                    Getter = getter,
+                    Setter = setter,
+                    Key = attr.Key,
+                    DefaultValue = attr.DefaultValue
+                });
+            }
+
+            _cachedFields[type] = list;
+            return list;
+        }
+
+
         #region XML doc
         /// <summary>
         /// Loads all the tracked EditorPrefs on enable.
@@ -421,23 +524,12 @@ namespace SETB
         #endregion
         public static void Load_AttributeEditorPrefs<T>(this T obj) where T : UnityEngine.Object
         {
-            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var fields = GetCachedFields(obj.GetType());
 
-            foreach (var field in fields)
+            foreach (var f in fields)
             {
-                var attr = field.GetCustomAttribute<EditorPrefAttribute>();
-                if (attr == null) continue;
-
-                Type fieldType = field.FieldType;
-                object defaultValue = attr.DefaultValue;
-
-                // Use reflection to call your generic GetEditorPref<T>
-                MethodInfo method = typeof(HandyEditorFunctions)
-                    .GetMethod(nameof(GetEditorPref), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                    .MakeGenericMethod(fieldType);
-
-                object value = method.Invoke(null, new object[] { attr.Key, true, defaultValue });
-                field.SetValue(obj, value);
+                var value = f.Getter(f.Key, f.DefaultValue);
+                f.SetValue(obj, value);
             }
         }
 
@@ -448,23 +540,27 @@ namespace SETB
         #endregion
         public static void Save_AttributeEditorPrefs<T>(this T obj) where T : UnityEngine.Object
         {
-            FieldInfo[] fields = obj.GetType().GetFields(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+            var fields = GetCachedFields(obj.GetType());
 
-            foreach (var field in fields)
+            foreach (var f in fields)
             {
-                var attr = field.GetCustomAttribute<EditorPrefAttribute>();
-                if (attr == null) continue;
-
-                Type fieldType = field.FieldType;
-                object value = field.GetValue(obj);
-
-                // Use reflection to call your generic SetEditorPref<T>
-                MethodInfo method = typeof(HandyEditorFunctions)
-                    .GetMethod(nameof(SetEditorPref), BindingFlags.Static | BindingFlags.NonPublic | BindingFlags.Public)
-                    .MakeGenericMethod(fieldType);
-
-                method.Invoke(null, new object[] { attr.Key, value, true });
+                var value = f.GetValue(obj);
+                f.Setter(f.Key, value);
             }
+        }
+        #endregion
+
+
+
+        #region Misc
+        public static void Record(SerializedProperty property, string name = "Change")
+        {
+            if (property.serializedObject.targetObject != null) Undo.RecordObject(property.serializedObject.targetObject, name);
+        }
+
+        public static void Record(UnityEngine.Object target, string name = "Change")
+        {
+            if (target != null) Undo.RecordObject(target, name);
         }
         #endregion
     }
@@ -492,7 +588,7 @@ namespace SETB
 
 
         public bool Centered { get; set; } = true;
-        public bool Locked { get; set; } = true;
+        public bool Locked { get; set; } = false;
     }
 
 
@@ -528,7 +624,7 @@ namespace SETB
             imageHeight = h;
 
 
-            CreateUtilityWindow(title, centered, locked, width, height, width, height);
+            CreateWindow(title, true, centered, locked, width, height, width, height);
 
 
             if (!silentWindow)
@@ -587,6 +683,8 @@ namespace SETB
         public string Key { get; }
 
         public object DefaultValue { get; }
+
+        public string TagOverride;
 
 
         public EditorPrefAttribute(string key, object defaultValue = default)

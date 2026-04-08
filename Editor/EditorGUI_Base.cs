@@ -4,63 +4,12 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 
+using static SETB.HandyEditorFunctions;
+
 namespace SETB
 {
     public static class EditorGUI_Base
     {
-        #region Custom GUI customization classes
-        public class List_GUILayoutOptions
-        {
-            public GUILayoutOption[] SearchOptions { get; set; } = Array.Empty<GUILayoutOption>();
-            public GUILayoutOption[] HeaderOptions { get; set; } = Array.Empty<GUILayoutOption>();
-            public GUILayoutOption[] ScrollOptions { get; set; } = Array.Empty<GUILayoutOption>();
-            public GUILayoutOption[] ItemOptions { get; set; } = Array.Empty<GUILayoutOption>();
-
-
-            public List_GUILayoutOptions()
-            {
-                SearchOptions = Array.Empty<GUILayoutOption>();
-                HeaderOptions = Array.Empty<GUILayoutOption>();
-                ScrollOptions = Array.Empty<GUILayoutOption>();
-                ItemOptions = Array.Empty<GUILayoutOption>();
-            }
-
-            public List_GUILayoutOptions(List_GUILayoutOptions other)
-            {
-                SearchOptions = other.SearchOptions;
-                HeaderOptions = other.HeaderOptions;
-                ScrollOptions = other.ScrollOptions;
-                ItemOptions = other.ItemOptions;
-            }
-        }
-
-
-        public class List_GUIStyles
-        {
-            public GUIStyle SearchStyle { get; set; } = EditorStyles.textField;
-            public GUIStyle HeaderStyle { get; set; } = EditorStyles.foldoutHeader;
-            public GUIStyle ItemStyle { get; set; } = EditorStyles.label;
-
-
-            public List_GUIStyles()
-            {
-                SearchStyle = EditorStyles.textField;
-                HeaderStyle = EditorStyles.foldoutHeader;
-                ItemStyle = EditorStyles.label;
-            }
-
-            public List_GUIStyles(List_GUIStyles other)
-            {
-                SearchStyle = other.SearchStyle;
-                HeaderStyle = other.HeaderStyle;
-                ItemStyle = other.ItemStyle;
-            }
-        }
-        #endregion
-
-
-
-
         #region Layout Helpers
         #region XML doc
         /// <summary>
@@ -68,7 +17,17 @@ namespace SETB
         /// </summary>
         /// <param name="indent">The indent level to set.</param>
         #endregion
-        public static void Indent(int indent) => EditorGUI.indentLevel = indent;
+        public static void SetIndent(int indent) => EditorGUI.indentLevel = indent;
+        public static void IterateIndent(int iteration) => EditorGUI.indentLevel += iteration;
+        public static int GetIndent() => EditorGUI.indentLevel;
+        public static void Indent(Action action)
+        {
+            IterateIndent(1);
+
+            action?.Invoke();
+
+            IterateIndent(-1);
+        }
 
         #region XML doc
         /// <summary>
@@ -226,6 +185,7 @@ namespace SETB
         {
             if (style == null) style = EditorStyles.toggle;
 
+
             value = EditorGUILayout.Toggle(label, value, style, options);
         }
 
@@ -242,6 +202,7 @@ namespace SETB
         {
             if (style == null) style = EditorStyles.toggle;
 
+
             value = EditorGUILayout.ToggleLeft(label, value, style, options);
         }
 
@@ -256,11 +217,12 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static void DrawSelectionPopup(ref Enum value, GUIStyle style = null, params GUILayoutOption[] options)
+        public static void DrawSelectionPopup(ref Enum value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
         {
             if (style == null) style = EditorStyles.popup;
 
-            value = EditorGUILayout.EnumPopup(value, style, options);
+            
+            ChangeValue(ref value, EditorGUILayout.EnumPopup(value, style, options), record);
         }
 
         #region XML doc
@@ -273,12 +235,16 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static void DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, params GUILayoutOption[] options)
+        public static void DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
         {
             if (style == null) style = EditorStyles.popup;
 
-            if (int_optionalOptions != null) value = EditorGUILayout.IntPopup(value, intOrGeneric_options, int_optionalOptions, style, options);
-            else value = EditorGUILayout.Popup(value, intOrGeneric_options, style, options);
+
+            int newValue;
+            if (int_optionalOptions != null) newValue = EditorGUILayout.IntPopup(value, intOrGeneric_options, int_optionalOptions, style, options);
+            else newValue = EditorGUILayout.Popup(value, intOrGeneric_options, style, options);
+
+            ChangeValue(ref value, newValue, record);
         }
 
 
@@ -297,8 +263,10 @@ namespace SETB
         /// <param name="allowSceneObjects">Whether to allow scene objects for Object fields or not.</param>
         /// <param name="options">The field's GUILayoutOptions.</param>
         #endregion
-        public static void DrawInputField<E>(string label, ref E field, GUIStyle style = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, bool? passwordOrTag = null, bool labelField = false, bool allowSceneObjects = true, params GUILayoutOption[] options)
+        public static void DrawInputField<E>(string label, ref E field, GUIStyle style = null, UnityEngine.Object record = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, bool? passwordOrTag = null, bool labelField = false, bool allowSceneObjects = true, params GUILayoutOption[] options)
         {
+            E newValue = field;
+
             Type e = typeof(E);
             switch (e)
             {
@@ -307,16 +275,16 @@ namespace SETB
                     
                     if (passwordOrTag != null)
                     {
-                        if (passwordOrTag == true) field = (E)(object)EditorGUILayout.PasswordField(label, (string)(object)field, style, options);
-                        else field = (E)(object)EditorGUILayout.TagField(label, (string)(object)field, style, options);
+                        if (passwordOrTag == true) newValue = (E)(object)EditorGUILayout.PasswordField(label, (string)(object)field, style, options);
+                        else newValue = (E)(object)EditorGUILayout.TagField(label, (string)(object)field, style, options);
                     }
                     else
                     {
                         if (labelField) EditorGUILayout.LabelField(label, (string)(object)field, style, options);
                         else
                         {
-                            if (delayed) field = (E)(object)EditorGUILayout.DelayedTextField(label, (string)(object)field, style, options);
-                            else field = (E)(object)EditorGUILayout.TextField(label, (string)(object)field, style, options);
+                            if (delayed) newValue = (E)(object)EditorGUILayout.DelayedTextField(label, (string)(object)field, style, options);
+                            else newValue = (E)(object)EditorGUILayout.TextField(label, (string)(object)field, style, options);
                         }
                     }
                     break;
@@ -326,116 +294,128 @@ namespace SETB
                     
                     if (layerOrMask)
                     {
-                        if (displayedMaskOptions == null) field = (E)(object)EditorGUILayout.LayerField(label, (int)(object)field, style, options);
-                        else field = (E)(object)EditorGUILayout.MaskField(new GUIContent(label), (int)(object)field, displayedMaskOptions, style, options);
+                        if (displayedMaskOptions == null) newValue = (E)(object)EditorGUILayout.LayerField(label, (int)(object)field, style, options);
+                        else newValue = (E)(object)EditorGUILayout.MaskField(new GUIContent(label), (int)(object)field, displayedMaskOptions, style, options);
                     }
                     else
                     {
-                        if (delayed) field = (E)(object)EditorGUILayout.DelayedIntField(label, (int)(object)field, style, options);
-                        else field = (E)(object)EditorGUILayout.IntField(label, (int)(object)field, style, options);
+                        if (delayed) newValue = (E)(object)EditorGUILayout.DelayedIntField(label, (int)(object)field, style, options);
+                        else newValue = (E)(object)EditorGUILayout.IntField(label, (int)(object)field, style, options);
                     }
                     break;
 
                 case Type _ when e == typeof(long):
                     if (style == null) style = EditorStyles.numberField;
                     
-                    field = (E)(object)EditorGUILayout.LongField(label, (long)(object)field, style, options);
+                    newValue = (E)(object)EditorGUILayout.LongField(label, (long)(object)field, style, options);
                     break;
 
                 case Type _ when e == typeof(float):
                     if (style == null) style = EditorStyles.numberField;
                     
-                    if (delayed) field = (E)(object)EditorGUILayout.DelayedFloatField(label, (float)(object)field, style, options);
-                    else field = (E)(object)EditorGUILayout.FloatField(label, (float)(object)field, style, options);
+                    if (delayed) newValue = (E)(object)EditorGUILayout.DelayedFloatField(label, (float)(object)field, style, options);
+                    else newValue = (E)(object)EditorGUILayout.FloatField(label, (float)(object)field, style, options);
                     break;
 
                 case Type _ when e == typeof(double):
                     if (style == null) style = EditorStyles.numberField;
                     
-                    if (delayed) field = (E)(object)EditorGUILayout.DelayedDoubleField(label, (double)(object)field, style, options);
-                    else field = (E)(object)EditorGUILayout.DoubleField(label, (double)(object)field, style, options);
+                    if (delayed) newValue = (E)(object)EditorGUILayout.DelayedDoubleField(label, (double)(object)field, style, options);
+                    else newValue = (E)(object)EditorGUILayout.DoubleField(label, (double)(object)field, style, options);
                     break;
 
                 case Type _ when e == typeof(Vector2):
-                    field = (E)(object)EditorGUILayout.Vector2Field(label, (Vector2)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.Vector2Field(label, (Vector2)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Vector2Int):
-                    field = (E)(object)EditorGUILayout.Vector2IntField(label, (Vector2Int)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.Vector2IntField(label, (Vector2Int)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Vector3):
-                    field = (E)(object)EditorGUILayout.Vector3Field(label, (Vector3)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.Vector3Field(label, (Vector3)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Vector3Int):
-                    field = (E)(object)EditorGUILayout.Vector3IntField(label, (Vector3Int)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.Vector3IntField(label, (Vector3Int)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Vector4):
-                    field = (E)(object)EditorGUILayout.Vector4Field(label, (Vector4)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.Vector4Field(label, (Vector4)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Color):
-                    field = (E)(object)EditorGUILayout.ColorField(label, (Color)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.ColorField(label, (Color)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Gradient):
-                    field = (E)(object)EditorGUILayout.GradientField(label, (Gradient)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.GradientField(label, (Gradient)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Rect):
-                    field = (E)(object)EditorGUILayout.RectField(label, (Rect)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.RectField(label, (Rect)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(RectInt):
-                    field = (E)(object)EditorGUILayout.RectIntField((RectInt)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.RectIntField((RectInt)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(Bounds):
-                    field = (E)(object)EditorGUILayout.BoundsField(label, (Bounds)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.BoundsField(label, (Bounds)(object)field, options);
                     break;
                     
                 case Type _ when e == typeof(BoundsInt):
-                    field = (E)(object)EditorGUILayout.BoundsIntField(label, (BoundsInt)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.BoundsIntField(label, (BoundsInt)(object)field, options);
                     break;
 
                 case Type _ when typeof(E).IsEnum:
                     if (style == null) style = EditorStyles.textField;
                     
-                    field = (E)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)field, style, options);
+                    newValue = (E)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)field, style, options);
                     break;
 
                 case Type _ when e == typeof(AnimationCurve):
-                    field = (E)(object)EditorGUILayout.CurveField(label, (AnimationCurve)(object)field, options);
+                    newValue = (E)(object)EditorGUILayout.CurveField(label, (AnimationCurve)(object)field, options);
                     break;
 
                 case Type _ when e == typeof(uint):
                     if (style == null) style = EditorStyles.numberField;
                     
-                    field = (E)(object)EditorGUILayout.RenderingLayerMaskField(label, (uint)(object)field, style, options);
+                    newValue = (E)(object)EditorGUILayout.RenderingLayerMaskField(label, (uint)(object)field, style, options);
                     break;
 
                 case Type _ when typeof(UnityEngine.Object).IsAssignableFrom(typeof(E)):
                     var obj = (UnityEngine.Object)(object)field;
                     var objType = obj != null ? obj.GetType() : typeof(E);
 
-                    field = (E)(object)EditorGUILayout.ObjectField(label, obj, objType, allowSceneObjects, options);
+                    newValue = (E)(object)EditorGUILayout.ObjectField(label, obj, objType, allowSceneObjects, options);
                     break;
 
                 case Type _ when e == typeof(SerializedProperty):
-                    EditorGUILayout.PropertyField((SerializedProperty)(object)field, new GUIContent(label), options);
+                    newValue = (E)(object)EditorGUILayout.PropertyField((SerializedProperty)(object)field, new GUIContent(label), options);
                     break;
 
                 default:
                     throw new NotSupportedException($"Unsupported type: {e.Name} for DrawInputField<{typeof(E)}>");
             }
+
+            ChangeValue(ref field, newValue, record);
         }
         #endregion
 
 
 
         #region With Logic
+        public static bool ChangeCheck(Action draw)
+        {
+            EditorGUI.BeginChangeCheck();
+
+            draw?.Invoke();
+
+            return EditorGUI.EndChangeCheck();
+        }
+
+
         #region XML doc
         /// <summary>
         /// Creates a button.
@@ -595,7 +575,7 @@ namespace SETB
             if (search != cacheSaveStr)
             {
                 cacheSaveStr = search;
-                cacheScoreDictionary = new Dictionary<string, float>();
+                cacheScoreDictionary.Clear();
 
                 
                 string localSearchVal = search;
@@ -873,7 +853,7 @@ namespace SETB
         #endregion
         private static E DrawSearchableList_Logic<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, E items, string searchStr)
         {
-            object itemsObj = (object)items;
+            object itemsObj = items;
 
 
             GetListItemMatchScore_Master(ref itemsObj, ref cacheSaveStr, cacheScoreDictionary, searchStr);
@@ -893,13 +873,13 @@ namespace SETB
         /// <param name="styles">The list of GUIStyles for the list.</param>
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
-        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
+        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, UnityEngine.Object record = null, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
         {
             styles ??= new List_GUIStyles();
             options ??= new List_GUILayoutOptions();
 
             
-            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, delayedSearch, false, null, null, false, true, options.SearchOptions);
+            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, record, delayedSearch, false, null, null, false, true, options.SearchOptions);
 
 
             items = DrawSearchableList_Logic(ref cacheSaveStr, cacheScoreDictionary, items, searchStr);
@@ -920,13 +900,13 @@ namespace SETB
         /// <param name="styles">The list of GUIStyles for the list.</param>
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
-        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
+        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, UnityEngine.Object record = null, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
         {
             styles ??= new List_GUIStyles();
             options ??= new List_GUILayoutOptions();
 
             
-            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, delayedSearch, false, null, null, false, true, options.SearchOptions);
+            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, record, delayedSearch, false, null, null, false, true, options.SearchOptions);
 
 
             items = DrawSearchableList_Logic(ref cacheSaveStr, cacheScoreDictionary, items, searchStr);
@@ -947,13 +927,13 @@ namespace SETB
         /// <param name="styles">The list of GUIStyles for the list.</param>
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
-        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
+        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref Vector2 scrollVector, UnityEngine.Object record = null, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
         {
             styles ??= new List_GUIStyles();
             options ??= new List_GUILayoutOptions();
 
             
-            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, delayedSearch, false, null, null, false, true, options.SearchOptions);
+            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, record, delayedSearch, false, null, null, false, true, options.SearchOptions);
 
 
             items = DrawSearchableList_Logic(ref cacheSaveStr, cacheScoreDictionary, items, searchStr);
@@ -975,13 +955,13 @@ namespace SETB
         /// <param name="styles">The list of GUIStyles for the list.</param>
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
-        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
+        public static void _DrawSearchableList<E>(ref string cacheSaveStr, Dictionary<string, float> cacheScoreDictionary, string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, ref Vector2 scrollVector, UnityEngine.Object record = null, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
         {
             styles ??= new List_GUIStyles();
             options ??= new List_GUILayoutOptions();
 
             
-            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, delayedSearch, false, null, null, false, true, options.SearchOptions);
+            DrawInputField(searchLabel, ref searchStr, styles.SearchStyle, record, delayedSearch, false, null, null, false, true, options.SearchOptions);
 
 
             items = DrawSearchableList_Logic(ref cacheSaveStr, cacheScoreDictionary, items, searchStr);
@@ -1048,5 +1028,81 @@ namespace SETB
             EditorGUILayout.EndHorizontal();
         }
         #endregion
+    
+    
+
+        #region Misc
+        public static void ChangeValue<T>(ref T value, T newValue, UnityEngine.Object target = null, string undoActionName = "Value Change", bool includeTypeName = true)
+        {
+            if (target == null)
+            {
+                value = newValue;
+
+                return;
+            }
+            
+
+            var _value = value;
+
+            if (ChangeCheck(() => _value = newValue))
+            {
+                Record(target, undoActionName + (includeTypeName ? $" ({typeof(T).Name})" : ""));
+
+                value = _value;
+            }
+        }
+        #endregion
     }
+
+
+
+    #region Custom GUI customization classes
+    public class List_GUILayoutOptions
+    {
+        public GUILayoutOption[] SearchOptions { get; set; } = Array.Empty<GUILayoutOption>();
+        public GUILayoutOption[] HeaderOptions { get; set; } = Array.Empty<GUILayoutOption>();
+        public GUILayoutOption[] ScrollOptions { get; set; } = Array.Empty<GUILayoutOption>();
+        public GUILayoutOption[] ItemOptions { get; set; } = Array.Empty<GUILayoutOption>();
+
+
+        public List_GUILayoutOptions()
+        {
+            SearchOptions = Array.Empty<GUILayoutOption>();
+            HeaderOptions = Array.Empty<GUILayoutOption>();
+            ScrollOptions = Array.Empty<GUILayoutOption>();
+            ItemOptions = Array.Empty<GUILayoutOption>();
+        }
+
+        public List_GUILayoutOptions(List_GUILayoutOptions other)
+        {
+            SearchOptions = other.SearchOptions;
+            HeaderOptions = other.HeaderOptions;
+            ScrollOptions = other.ScrollOptions;
+            ItemOptions = other.ItemOptions;
+        }
+    }
+
+
+    public class List_GUIStyles
+    {
+        public GUIStyle SearchStyle { get; set; } = EditorStyles.textField;
+        public GUIStyle HeaderStyle { get; set; } = EditorStyles.foldoutHeader;
+        public GUIStyle ItemStyle { get; set; } = EditorStyles.label;
+
+
+        public List_GUIStyles()
+        {
+            SearchStyle = EditorStyles.textField;
+            HeaderStyle = EditorStyles.foldoutHeader;
+            ItemStyle = EditorStyles.label;
+        }
+
+        public List_GUIStyles(List_GUIStyles other)
+        {
+            SearchStyle = other.SearchStyle;
+            HeaderStyle = other.HeaderStyle;
+            ItemStyle = other.ItemStyle;
+        }
+    }
+    #endregion
 }

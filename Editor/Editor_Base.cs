@@ -1,23 +1,32 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+
 using static SETB.EditorGUI_Base;
+using static SETB.HandyEditorFunctions;
 
 namespace SETB
 {
-    public abstract class Editor_Base<T> : Editor where T : Editor
+    public abstract class Editor_Base<T> : Editor where T : Editor_Base<T>
     {
         #region Variables
         private string cacheSaveStr = "";
+        private Dictionary<string, float> cacheScoreDictionary = new();
 
-        private Dictionary<string, float> cacheScoreDictionary = new Dictionary<string, float>();
+
+        private Dictionary<string, SerializedProperty> propCache = new();
         #endregion
 
 
 
 
         #region Unity Methods
-        protected virtual void OnEnable() => this.Load_AttributeEditorPrefs();
+        protected virtual void OnEnable()
+        {
+            this.Load_AttributeEditorPrefs();
+
+            propCache.Clear();
+        }
         
         protected virtual void OnDisable() => this.Save_AttributeEditorPrefs();
 
@@ -50,7 +59,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -66,7 +75,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -82,7 +91,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref scrollVector, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref scrollVector, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -99,18 +108,23 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, target, delayedSearch, styles, options);
+        
+        
+        protected void Record(string name = "Inspector Change") => HandyEditorFunctions.Record(target, name);
         #endregion
 
 
 
         #region Misc
-        protected SerializedProperty Prop(string name) => serializedObject.FindProperty(name);
-
-
-        protected void Record(string name = "Inspector Change")
+        protected SerializedProperty Prop(string name)
         {
-            if (target != null) Undo.RecordObject(target, name);
+            if (!propCache.TryGetValue(name, out var prop))
+            {
+                prop = serializedObject.FindProperty(name);
+                propCache[name] = prop;
+            }
+            return prop;
         }
 
 
