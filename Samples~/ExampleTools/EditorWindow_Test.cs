@@ -30,7 +30,7 @@ public class EditorWindow_Test : EditorWindow_Base<EditorWindow_Test>
     string[] list = new string[] { "item1", "item2", "item3", "item4", "item5", "test", "placeholder", "example", "item2", "item3", "item4", "item5", "test", "placeholder", "example", "item2", "item3", "item4", "item5", "test", "placeholder", "example", "item2", "item3", "item4", "item5", "test", "placeholder", "example", "item2", "item3", "item4", "item5", "test", "placeholder", "example", "item2", "item3", "item4", "item5", "test", "placeholder", "example" };
     protected void OnGUI()
     {
-        GUILayout.Label("This is a test tool", EditorStyles.boldLabel);
+        DrawLabel("This is a test tool", EditorStyles.boldLabel);
 
         DrawToggle("Centered Toggle", ref centeredWindow);
 

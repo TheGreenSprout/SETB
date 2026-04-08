@@ -5,7 +5,7 @@ using SETB;
 using static SETB.HandyEditorFunctions;
 
 //[CustomPropertyDrawer(typeof(ClassName.PropertyName), true /*Children Scripts are affected*/)]
-public class PropertyDrawer_ScriptTemplate : PropertyDrawer_Base<PropertyDrawer_ScriptTemplate>
+public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
 {
     
     protected override void Draw(SerializedProperty property)

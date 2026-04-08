@@ -5,8 +5,14 @@ using SETB;
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
-public class EditorWindow_ScriptTemplate : EditorWindow_Base<EditorWindow_ScriptTemplate>
+public class #SCRIPTNAME# : EditorWindow_Base<#SCRIPTNAME#>
 {
     [MenuItem("Tools/...")]
     public static void ShowWindow() => CreateWindow("Window Title");
+
+
+    protected void OnGUI()
+    {
+        
+    }
 }

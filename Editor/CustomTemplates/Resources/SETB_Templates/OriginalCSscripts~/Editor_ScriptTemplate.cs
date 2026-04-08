@@ -6,7 +6,7 @@ using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
 //[CustomEditor(typeof(ClassName), true /*Children Scripts are affected*/)]
-public class Editor_ScriptTemplate : Editor_Base<Editor_ScriptTemplate>
+public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
 {
     protected override void DrawInspector()
     {
