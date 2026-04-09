@@ -92,8 +92,7 @@ namespace SETB
             EditorGUI.BeginProperty(position, label, property);
 
 
-            if (targetProperty == null) targetProperty = property;
-
+            targetProperty = property;
 
             position = EditorGUI.PrefixLabel(position, label);
 
@@ -115,12 +114,12 @@ namespace SETB
         
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
-            LayoutContext context = new LayoutContext(new Rect(0, 0, EditorGUIUtility.currentViewWidth, 0));
+            ctx = new LayoutContext(new Rect(0, 0, EditorGUIUtility.currentViewWidth, 0));
             
             Build(property);
 
 
-            return context.HeightUsed;
+            return ctx.HeightUsed;
         }
         #endregion
 
@@ -136,20 +135,25 @@ namespace SETB
 
         #region GUI Helpers
             #region Layout Helpers
-            protected Rect GetLastRect(float height) => new Rect(ctx.position.x, ctx.y, ctx.position.width, height);
-
-
-            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null)
+            protected Rect PeekRect(float height, LayoutContext? context = null)
             {
+                var c = context ?? ctx;
+
+                return new Rect(c.position.x, c.y, c.position.width, height);
+            }
+
+            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null, LayoutContext? context = null)
+            {
+                var c = context ?? ctx;
                 float h = EditorGUI.GetPropertyHeight(prop, includeChildren);
-                Rect r = ctx.GetRect(h);
+                Rect r = c.GetRect(h);
 
                 if (label == null) EditorGUI.PropertyField(r, prop, includeChildren);
                 else EditorGUI.PropertyField(r, prop, new GUIContent(label), includeChildren);
             }
 
 
-            protected void Space(float height = 6f) => ctx.Space(height);
+            protected void Space(float height = 6f, LayoutContext? context = null) => (context ?? ctx).Space(height);
 
             public void SetIndent(int indent) => EditorGUI_Base.SetIndent(indent);
             public void IterateIndent(int iteration) => EditorGUI_Base.IterateIndent(iteration);
@@ -160,24 +164,24 @@ namespace SETB
 
 
             #region Text Display
-            protected void DrawLabel(string text)
+            protected void DrawLabel(string text, LayoutContext? context = null)
             {
-                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
                 EditorGUI.LabelField(r, text);
             }
 
 
-            protected void DrawBox(string text)
+            protected void DrawBox(string text, LayoutContext? context = null)
             {
                 float h = EditorGUIUtility.singleLineHeight * 1.5f;
-                Rect r = ctx.GetRect(h);
+                Rect r = (context ?? ctx).GetRect(h);
                 EditorGUI.HelpBox(r, text, MessageType.None);
             }
 
-            protected void DrawHelpBox(string text, MessageType type)
+            protected void DrawHelpBox(string text, MessageType type, LayoutContext? context = null)
             {
                 float h = EditorGUIUtility.singleLineHeight * 2f;
-                Rect r = ctx.GetRect(h);
+                Rect r = (context ?? ctx).GetRect(h);
                 EditorGUI.HelpBox(r, text, type);
             }
             #endregion
@@ -185,17 +189,17 @@ namespace SETB
 
 
             #region With Logic
-            protected void DrawButton(string label, Action logic)
+            protected void DrawButton(string label, Action logic, LayoutContext? context = null)
             {
-                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
 
                 if (GUI.Button(r, label)) logic?.Invoke();
             }
 
 
-            protected void DrawFoldout(SerializedProperty property, Action logic, string label = null, GUIStyle style = null)
+            protected void DrawFoldout(SerializedProperty property, Action logic, string label = null, GUIStyle style = null, LayoutContext? context = null)
             {
-                Rect r = ctx.GetRect(EditorGUIUtility.singleLineHeight);
+                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
 
                 property.isExpanded = EditorGUI.Foldout(
                     r,
@@ -212,13 +216,68 @@ namespace SETB
 
 
 
-        #region Misc
-        protected SerializedProperty Find(string relativePath) => targetProperty.FindPropertyRelative(relativePath);
-
-
-        protected E GetValue<E>(string relativePath)
+        #region Children Helpers
+        protected bool HasChildren(SerializedProperty property = null)
         {
-            var prop = Find(relativePath);
+            var iterator = (property ?? targetProperty).Copy();
+            var end = iterator.GetEndProperty();
+
+            return iterator.NextVisible(true) && !SerializedProperty.EqualContents(iterator, end);
+        }
+
+
+        protected void DrawAllChildren(SerializedProperty property = null) => AllChildren(property);
+        protected void AllChildren(SerializedProperty property = null, Action<SerializedProperty> logic = null)
+        {
+            var iterator = property?.Copy() ?? targetProperty.Copy();
+            var end = iterator.GetEndProperty();
+
+            if (iterator.NextVisible(true))
+            {
+                do
+                {
+                    if (SerializedProperty.EqualContents(iterator, end)) break;
+
+                    if (logic == null) DrawProperty(iterator, true);
+                    else logic?.Invoke(iterator);
+                }
+                while (iterator.NextVisible(false));
+            }
+        }
+
+
+        protected float GetAllChildrenHeight(SerializedProperty property = null)
+        {
+            float total = 0f;
+
+            var iterator = property?.Copy() ?? targetProperty.Copy();
+            var end = iterator.GetEndProperty();
+
+            if (iterator.NextVisible(true))
+            {
+                do
+                {
+                    if (SerializedProperty.EqualContents(iterator, end)) break;
+
+                    total += EditorGUI.GetPropertyHeight(iterator, true) + EditorGUIUtility.standardVerticalSpacing;
+                }
+                while (iterator.NextVisible(false));
+            }
+
+            return total;
+        }
+        #endregion
+
+
+
+        #region Misc
+        protected SerializedProperty Find(string relativePath, SerializedProperty property = null)
+            => (property ?? targetProperty).FindPropertyRelative(relativePath);
+
+
+        protected E GetValue<E>(string relativePath, SerializedProperty property = null)
+        {
+            var prop = Find(relativePath, property);
 
             return prop switch
             {
@@ -230,9 +289,9 @@ namespace SETB
             };
         }
 
-        protected void SetValue<E>(string relativePath, T value)
+        protected void SetValue<E>(string relativePath, E value, SerializedProperty property = null)
         {
-            var prop = Find(relativePath);
+            var prop = Find(relativePath, property);
 
             switch (prop.propertyType)
             {
@@ -255,17 +314,22 @@ namespace SETB
         }
 
 
-        protected bool BeginChangeCheck()
+        protected bool ChangeCheck(Action logic, SerializedProperty property = null)
         {
-            EditorGUI.BeginChangeCheck();
-            return true;
+            BeginChangeCheck();
+
+            logic?.Invoke();
+
+            return EndChangeCheck(property);
         }
 
-        protected bool EndChangeCheck(SerializedProperty property)
+        protected void BeginChangeCheck() => EditorGUI.BeginChangeCheck();
+        protected bool EndChangeCheck(SerializedProperty property = null)
         {
             if (EditorGUI.EndChangeCheck())
             {
-                property.serializedObject.ApplyModifiedProperties();
+                (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
+
                 return true;
             }
             return false;

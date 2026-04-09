@@ -1032,13 +1032,13 @@ namespace SETB
     
 
         #region Misc
-        public static void ChangeValue<T>(ref T value, T newValue, UnityEngine.Object target = null, string undoActionName = "Value Change", bool includeTypeName = true)
+        public static bool ChangeValue<T>(ref T value, T newValue, UnityEngine.Object target = null, string undoActionName = "Value Change", bool includeTypeName = true)
         {
             if (target == null)
             {
                 value = newValue;
 
-                return;
+                return false;
             }
             
 
@@ -1049,7 +1049,11 @@ namespace SETB
                 Record(target, undoActionName + (includeTypeName ? $" ({typeof(T).Name})" : ""));
 
                 value = _value;
+
+
+                return true;
             }
+            return false;
         }
         #endregion
     }

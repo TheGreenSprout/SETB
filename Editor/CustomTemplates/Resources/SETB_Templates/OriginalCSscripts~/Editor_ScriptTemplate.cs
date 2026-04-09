@@ -10,7 +10,7 @@ public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
 {
     protected override void DrawInspector()
     {
-        base.DrawInspector(); // Draws the default inspector. Remove this line if you don't want that.
+        base.DrawInspector(); // Draws the default inspector. Remove this line if you want custom logic.
 
         // Your custom inspector code goes here.
     }
