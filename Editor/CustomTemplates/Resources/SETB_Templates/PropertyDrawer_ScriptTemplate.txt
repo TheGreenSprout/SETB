@@ -21,16 +21,16 @@ public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
     #region Layout
     protected override void Build(SerializedProperty property)
     {
-        // Default layout (matches DrawProperty)
-        Space(EditorGUI.GetPropertyHeight(property, true));
+        // Default layout (matches DrawProperty) [NOT custom, remove if custom]
+        base.Build(property);
 
 
-        // If using children start from:
-        //Space(GetAllChildrenHeight(property));
+        // If fully custom:
+        //Space(SingleLineHeight());
 
 
-        // If fully custom, start from:
-        //Space(EditorGUIUtility.singleLineHeight);
+        // If using children:
+        //if (property.managedReferenceValue != null) Space(GetAllChildrenHeight(property));
     }
     #endregion
 }

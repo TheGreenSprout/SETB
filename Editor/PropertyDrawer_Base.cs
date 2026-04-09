@@ -48,21 +48,23 @@ namespace SETB
 
 
 
-        private static Dictionary<string, Dictionary<string, object>> stateCache = new();
+        protected static Dictionary<string, Dictionary<string, object>> stateCache = new();
 
         protected E GetState<E>(SerializedProperty property, string key, E defaultValue = default)
         {
-            string path = property.propertyPath;
+            string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
-            if (!stateCache.TryGetValue(path, out var dict))
+            if (!stateCache.TryGetValue(fullKey, out var dict))
             {
                 dict = new Dictionary<string, object>();
-                stateCache[path] = dict;
+
+                stateCache[fullKey] = dict;
             }
 
             if (!dict.TryGetValue(key, out var value))
             {
                 dict[key] = defaultValue;
+
                 return defaultValue;
             }
 
@@ -71,12 +73,13 @@ namespace SETB
 
         protected void SetState<E>(SerializedProperty property, string key, E value)
         {
-            string path = property.propertyPath;
+            string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
-            if (!stateCache.TryGetValue(path, out var dict))
+            if (!stateCache.TryGetValue(fullKey, out var dict))
             {
                 dict = new Dictionary<string, object>();
-                stateCache[path] = dict;
+
+                stateCache[fullKey] = dict;
             }
 
             dict[key] = value;
@@ -121,6 +124,9 @@ namespace SETB
 
             return ctx.HeightUsed;
         }
+
+        protected float GetPropertyHeight(SerializedProperty prop, bool includeChildren = true)
+            => EditorGUI.GetPropertyHeight(prop, includeChildren);
         #endregion
 
 
@@ -128,7 +134,7 @@ namespace SETB
         #region Override Points
         protected virtual void Draw(SerializedProperty property) => DrawProperty(property, true);
 
-        protected virtual void Build(SerializedProperty property) => ctx.Space(EditorGUI.GetPropertyHeight(property, true));
+        protected virtual void Build(SerializedProperty property) => GetPropertyHeight(property, true);
         #endregion
 
 
@@ -151,6 +157,9 @@ namespace SETB
                 if (label == null) EditorGUI.PropertyField(r, prop, includeChildren);
                 else EditorGUI.PropertyField(r, prop, new GUIContent(label), includeChildren);
             }
+
+
+            protected float SingleLineHeight() => EditorGUIUtility.singleLineHeight;
 
 
             protected void Space(float height = 6f, LayoutContext? context = null) => (context ?? ctx).Space(height);
@@ -210,6 +219,135 @@ namespace SETB
                 );
 
                 if (property.isExpanded) logic?.Invoke();
+            }
+
+
+            protected int DrawPopup(string label, int selectedIndex, string[] options)
+            {
+                int newIndex = EditorGUI.Popup(
+                    ctx.GetRect(EditorGUIUtility.singleLineHeight),
+                    label,
+                    selectedIndex,
+                    options
+                );
+
+                return newIndex;
+            }
+            protected int DrawPopup(string label, int selectedIndex, string[] options, out bool changed)
+            {
+                int newIndex = selectedIndex;
+
+                changed = ChangeCheck(() =>
+                {
+                    newIndex = EditorGUI.Popup(
+                        ctx.GetRect(EditorGUIUtility.singleLineHeight),
+                        label,
+                        selectedIndex,
+                        options
+                    );
+                });
+
+                return newIndex;
+            }
+
+            protected void DrawManagedReferenceDropdown(SerializedProperty property, string label, Type[] types, string[] names)
+            {
+                int currentIndex = 0;
+
+                if (property.managedReferenceValue != null)
+                {
+                    var currentType = property.managedReferenceValue.GetType();
+
+                    currentIndex = Array.FindIndex(types, t => t == currentType);
+
+                    if (currentIndex < 0) currentIndex = 0;
+                }
+
+
+                int selectedIndex = DrawPopup(label, currentIndex, names, out bool changed);
+
+
+                if (changed) property.managedReferenceValue =
+                                types[selectedIndex] == null
+                                ? null
+                                : Activator.CreateInstance(types[selectedIndex]);
+            }
+            #endregion
+
+
+
+            #region Field Helpers
+            protected int DrawInt(string label, int value, out bool changed, LayoutContext? context = null)
+            {
+                int newValue = value;
+                changed = ChangeCheck(() =>
+                {
+                    newValue = EditorGUI.IntField(
+                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        label,
+                        value
+                    );
+                });
+
+                return newValue;
+            }
+
+            protected float DrawFloat(string label, float value, out bool changed, LayoutContext? context = null)
+            {
+                float newValue = value;
+                changed = ChangeCheck(() =>
+                {
+                    newValue = EditorGUI.FloatField(
+                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        label,
+                        value
+                    );
+                });
+
+                return newValue;
+            }
+
+
+            protected E DrawEnum<E>(string label, E value, out bool changed, LayoutContext? context = null) where E : Enum
+            {
+                E newValue = value;
+                changed = ChangeCheck(() =>
+                {
+                    newValue = (E)EditorGUI.EnumPopup(
+                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        label,
+                        value
+                    );
+                });
+
+                return newValue;
+            }
+
+            protected E DrawObject<E>(string label, E value, out bool changed, bool allowSceneObjects = true, LayoutContext? context = null) where E : UnityEngine.Object
+            {
+                E newValue = value;
+                changed = ChangeCheck(() =>
+                {
+                    newValue = (E)EditorGUI.ObjectField(
+                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        label,
+                        value,
+                        typeof(E),
+                        allowSceneObjects
+                    );
+                });
+
+                return newValue;
+            }
+
+
+            protected void DrawProp(SerializedProperty prop, string label = null, LayoutContext? context = null)
+            {
+                EditorGUI.PropertyField(
+                    (context ?? ctx).GetRect(SingleLineHeight()),
+                    prop,
+                    label == null ? GUIContent.none : new GUIContent(label)
+                );
             }
             #endregion
         #endregion
@@ -314,21 +452,21 @@ namespace SETB
         }
 
 
-        protected bool ChangeCheck(Action logic, SerializedProperty property = null)
+        protected bool ChangeCheck(Action logic, SerializedProperty property = null, bool applyModifiedProperties = true)
         {
             BeginChangeCheck();
 
             logic?.Invoke();
 
-            return EndChangeCheck(property);
+            return EndChangeCheck(property, applyModifiedProperties);
         }
 
         protected void BeginChangeCheck() => EditorGUI.BeginChangeCheck();
-        protected bool EndChangeCheck(SerializedProperty property = null)
+        protected bool EndChangeCheck(SerializedProperty property = null, bool applyModifiedProperties = true)
         {
             if (EditorGUI.EndChangeCheck())
             {
-                (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
+                if (applyModifiedProperties) (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
 
                 return true;
             }
