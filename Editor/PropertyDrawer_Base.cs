@@ -109,7 +109,7 @@ namespace SETB
 
             targetProperty = property;
 
-            position = EditorGUI.PrefixLabel(position, label);
+            //position = EditorGUI.PrefixLabel(position, label);
 
 
             ctx = new LayoutContext(position);
@@ -268,7 +268,7 @@ namespace SETB
                 return newIndex;
             }
 
-            protected void DrawManagedReferenceDropdown(SerializedProperty property, string label, Type[] types, string[] names)
+            protected void DrawManagedReferenceDropdown(SerializedProperty property, string label, Type[] types, string[] names, bool handleDraw = true)
             {
                 int currentIndex = 0;
 
@@ -295,6 +295,12 @@ namespace SETB
                                 : Activator.CreateInstance(types[selectedIndex]);
                 },
                 "Change Managed Reference Dropdown");
+
+
+                if (!handleDraw) return;
+
+                Space();
+                if (property.managedReferenceValue != null) AllChildren(property);
             }
             #endregion
 
@@ -442,7 +448,7 @@ namespace SETB
                 {
                     if (SerializedProperty.EqualContents(iterator, end)) break;
 
-                    if (logic == null) DrawProperty(iterator, true);
+                    if (logic == null) DrawProperty(iterator, true, iterator.displayName);
                     else logic?.Invoke(iterator);
                 }
                 while (iterator.NextVisible(false));
