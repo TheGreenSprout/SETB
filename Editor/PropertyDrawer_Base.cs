@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using NUnit.Framework;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,7 +10,7 @@ namespace SETB
     public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : PropertyDrawer_Base<T>
     {
         #region Variables
-        protected struct LayoutContext
+        protected class LayoutContext
         {
             public Rect position;
             public float y;
@@ -41,6 +40,7 @@ namespace SETB
 
         protected LayoutContext ctx;
         protected bool isDrawing;
+        protected bool isLayout => !isDrawing;
 
 
         protected SerializedProperty targetProperty;
@@ -52,6 +52,9 @@ namespace SETB
 
         protected E GetState<E>(SerializedProperty property, string key, E defaultValue = default)
         {
+            if (stateCache.Count > 1000) stateCache.Clear();
+
+
             string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
             if (!stateCache.TryGetValue(fullKey, out var dict))
@@ -73,6 +76,9 @@ namespace SETB
 
         protected void SetState<E>(SerializedProperty property, string key, E value)
         {
+            if (stateCache.Count > 1000) stateCache.Clear();
+
+
             string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
             if (!stateCache.TryGetValue(fullKey, out var dict))
@@ -84,6 +90,12 @@ namespace SETB
 
             dict[key] = value;
         }
+
+
+
+        protected float singleLineHeight => EditorGUIUtility.singleLineHeight;
+
+        protected float standardVerticalSpacing => EditorGUIUtility.standardVerticalSpacing;
         #endregion
 
 
@@ -100,15 +112,10 @@ namespace SETB
             position = EditorGUI.PrefixLabel(position, label);
 
 
-            Indent(() =>
-            {
-                ctx = new LayoutContext(position);
-                isDrawing = true;
+            ctx = new LayoutContext(position);
+            isDrawing = true;
 
-                Draw(property);
-
-                isDrawing = false;
-            });
+            Build(property);
 
 
             EditorGUI.EndProperty();
@@ -117,8 +124,12 @@ namespace SETB
         
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
+            targetProperty = property;
+
+
             ctx = new LayoutContext(new Rect(0, 0, EditorGUIUtility.currentViewWidth, 0));
             
+            isDrawing = false;
             Build(property);
 
 
@@ -132,37 +143,24 @@ namespace SETB
 
 
         #region Override Points
-        protected virtual void Draw(SerializedProperty property) => DrawProperty(property, true);
-
-        protected virtual void Build(SerializedProperty property) => GetPropertyHeight(property, true);
+        protected abstract void Build(SerializedProperty property);
         #endregion
 
 
 
         #region GUI Helpers
             #region Layout Helpers
-            protected Rect PeekRect(float height, LayoutContext? context = null)
+            protected Rect ReserveSpace(float height, LayoutContext context = null) => (context ?? ctx).GetRect(height);
+
+            protected Rect PeekRect(float height, LayoutContext context = null)
             {
                 var c = context ?? ctx;
 
                 return new Rect(c.position.x, c.y, c.position.width, height);
             }
 
-            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null, LayoutContext? context = null)
-            {
-                var c = context ?? ctx;
-                float h = EditorGUI.GetPropertyHeight(prop, includeChildren);
-                Rect r = c.GetRect(h);
 
-                if (label == null) EditorGUI.PropertyField(r, prop, includeChildren);
-                else EditorGUI.PropertyField(r, prop, new GUIContent(label), includeChildren);
-            }
-
-
-            protected float SingleLineHeight() => EditorGUIUtility.singleLineHeight;
-
-
-            protected void Space(float height = 6f, LayoutContext? context = null) => (context ?? ctx).Space(height);
+            protected void Space(float height = 6f, LayoutContext context = null) => (context ?? ctx).Space(height);
 
             public void SetIndent(int indent) => EditorGUI_Base.SetIndent(indent);
             public void IterateIndent(int iteration) => EditorGUI_Base.IterateIndent(iteration);
@@ -173,42 +171,48 @@ namespace SETB
 
 
             #region Text Display
-            protected void DrawLabel(string text, LayoutContext? context = null)
+            protected void DrawLabel(string text, LayoutContext context = null)
             {
-                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
-                EditorGUI.LabelField(r, text);
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+                if (isDrawing) EditorGUI.LabelField(r, text);
             }
 
 
-            protected void DrawBox(string text, LayoutContext? context = null)
+            protected void DrawBox(string text, LayoutContext context = null)
             {
-                float h = EditorGUIUtility.singleLineHeight * 1.5f;
-                Rect r = (context ?? ctx).GetRect(h);
-                EditorGUI.HelpBox(r, text, MessageType.None);
+                float h = singleLineHeight * 1.5f;
+                Rect r = ReserveSpace(h, context);
+
+                if (isDrawing) EditorGUI.HelpBox(r, text, MessageType.None);
             }
 
-            protected void DrawHelpBox(string text, MessageType type, LayoutContext? context = null)
+            protected void DrawHelpBox(string text, MessageType type, LayoutContext context = null)
             {
-                float h = EditorGUIUtility.singleLineHeight * 2f;
-                Rect r = (context ?? ctx).GetRect(h);
-                EditorGUI.HelpBox(r, text, type);
+                float h = singleLineHeight * 2f;
+                Rect r = ReserveSpace(h, context);
+
+                if (isDrawing) EditorGUI.HelpBox(r, text, type);
             }
             #endregion
 
 
 
             #region With Logic
-            protected void DrawButton(string label, Action logic, LayoutContext? context = null)
+            protected void DrawButton(string label, Action logic, LayoutContext context = null)
             {
-                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
+                Rect r = ReserveSpace(singleLineHeight, context);
 
-                if (GUI.Button(r, label)) logic?.Invoke();
+                if (isDrawing && GUI.Button(r, label)) logic?.Invoke();
             }
 
 
-            protected void DrawFoldout(SerializedProperty property, Action logic, string label = null, GUIStyle style = null, LayoutContext? context = null)
+            protected void DrawFoldout(SerializedProperty property, Action logic, string label = null, GUIStyle style = null, LayoutContext context = null)
             {
-                Rect r = (context ?? ctx).GetRect(EditorGUIUtility.singleLineHeight);
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout) return;
 
                 property.isExpanded = EditorGUI.Foldout(
                     r,
@@ -222,10 +226,15 @@ namespace SETB
             }
 
 
-            protected int DrawPopup(string label, int selectedIndex, string[] options)
+            protected int DrawPopup(string label, int selectedIndex, string[] options, LayoutContext context = null)
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout) return selectedIndex;
+
                 int newIndex = EditorGUI.Popup(
-                    ctx.GetRect(EditorGUIUtility.singleLineHeight),
+                    r,
                     label,
                     selectedIndex,
                     options
@@ -233,14 +242,23 @@ namespace SETB
 
                 return newIndex;
             }
-            protected int DrawPopup(string label, int selectedIndex, string[] options, out bool changed)
+            protected int DrawPopup(string label, int selectedIndex, string[] options, out bool changed, LayoutContext context = null)
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout)
+                {
+                    changed = false;
+                    return selectedIndex;
+                }
+
                 int newIndex = selectedIndex;
 
                 changed = ChangeCheck(() =>
                 {
                     newIndex = EditorGUI.Popup(
-                        ctx.GetRect(EditorGUIUtility.singleLineHeight),
+                        r,
                         label,
                         selectedIndex,
                         options
@@ -267,23 +285,38 @@ namespace SETB
                 int selectedIndex = DrawPopup(label, currentIndex, names, out bool changed);
 
 
-                if (changed) property.managedReferenceValue =
+                if (isLayout) return;
+
+                RecordAndApply(property, () =>
+                {
+                    if (changed) property.managedReferenceValue =
                                 types[selectedIndex] == null
                                 ? null
                                 : Activator.CreateInstance(types[selectedIndex]);
+                },
+                "Change Managed Reference Dropdown");
             }
             #endregion
 
 
 
             #region Field Helpers
-            protected int DrawInt(string label, int value, out bool changed, LayoutContext? context = null)
+            protected int DrawInt(string label, int value, out bool changed, LayoutContext context = null)
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout)
+                {
+                    changed = false;
+                    return value;
+                }
+
                 int newValue = value;
                 changed = ChangeCheck(() =>
                 {
                     newValue = EditorGUI.IntField(
-                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        r,
                         label,
                         value
                     );
@@ -292,13 +325,22 @@ namespace SETB
                 return newValue;
             }
 
-            protected float DrawFloat(string label, float value, out bool changed, LayoutContext? context = null)
+            protected float DrawFloat(string label, float value, out bool changed, LayoutContext context = null)
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout)
+                {
+                    changed = false;
+                    return value;
+                }
+
                 float newValue = value;
                 changed = ChangeCheck(() =>
                 {
                     newValue = EditorGUI.FloatField(
-                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        r,
                         label,
                         value
                     );
@@ -308,13 +350,22 @@ namespace SETB
             }
 
 
-            protected E DrawEnum<E>(string label, E value, out bool changed, LayoutContext? context = null) where E : Enum
+            protected E DrawEnum<E>(string label, E value, out bool changed, LayoutContext context = null) where E : Enum
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout)
+                {
+                    changed = false;
+                    return value;
+                }
+
                 E newValue = value;
                 changed = ChangeCheck(() =>
                 {
                     newValue = (E)EditorGUI.EnumPopup(
-                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        r,
                         label,
                         value
                     );
@@ -323,13 +374,22 @@ namespace SETB
                 return newValue;
             }
 
-            protected E DrawObject<E>(string label, E value, out bool changed, bool allowSceneObjects = true, LayoutContext? context = null) where E : UnityEngine.Object
+            protected E DrawObject<E>(string label, E value, out bool changed, bool allowSceneObjects = true, LayoutContext context = null) where E : UnityEngine.Object
             {
+                Rect r = ReserveSpace(singleLineHeight, context);
+
+
+                if (isLayout)
+                {
+                    changed = false;
+                    return value;
+                }
+
                 E newValue = value;
                 changed = ChangeCheck(() =>
                 {
                     newValue = (E)EditorGUI.ObjectField(
-                        (context ?? ctx).GetRect(SingleLineHeight()),
+                        r,
                         label,
                         value,
                         typeof(E),
@@ -341,12 +401,18 @@ namespace SETB
             }
 
 
-            protected void DrawProp(SerializedProperty prop, string label = null, LayoutContext? context = null)
+            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null, LayoutContext context = null)
             {
+                Rect r = ReserveSpace(GetPropertyHeight(prop, includeChildren), context);
+
+
+                if (isLayout) return;
+
                 EditorGUI.PropertyField(
-                    (context ?? ctx).GetRect(SingleLineHeight()),
+                    r,
                     prop,
-                    label == null ? GUIContent.none : new GUIContent(label)
+                    label == null ? GUIContent.none : new GUIContent(label),
+                    includeChildren
                 );
             }
             #endregion
@@ -397,7 +463,7 @@ namespace SETB
                 {
                     if (SerializedProperty.EqualContents(iterator, end)) break;
 
-                    total += EditorGUI.GetPropertyHeight(iterator, true) + EditorGUIUtility.standardVerticalSpacing;
+                    total += GetPropertyHeight(iterator, true) + standardVerticalSpacing;
                 }
                 while (iterator.NextVisible(false));
             }
@@ -454,6 +520,14 @@ namespace SETB
 
         protected bool ChangeCheck(Action logic, SerializedProperty property = null, bool applyModifiedProperties = true)
         {
+            if (isLayout)
+            {
+                logic?.Invoke();
+                
+                return false;
+            }
+
+
             BeginChangeCheck();
 
             logic?.Invoke();
@@ -461,9 +535,15 @@ namespace SETB
             return EndChangeCheck(property, applyModifiedProperties);
         }
 
-        protected void BeginChangeCheck() => EditorGUI.BeginChangeCheck();
+        protected void BeginChangeCheck()
+        {
+            if (isDrawing) EditorGUI.BeginChangeCheck();
+        }
         protected bool EndChangeCheck(SerializedProperty property = null, bool applyModifiedProperties = true)
         {
+            if (isLayout) return false;
+
+
             if (EditorGUI.EndChangeCheck())
             {
                 if (applyModifiedProperties) (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
@@ -471,6 +551,27 @@ namespace SETB
                 return true;
             }
             return false;
+        }
+
+
+        protected void ApplyModifiedProperties(SerializedProperty property = null)
+            => (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
+
+        protected void RecordAndApply(SerializedProperty property, Action logic, string undoMessage = "Change Property")
+        {
+            if (isLayout)
+            {
+                logic?.Invoke();
+                
+                return;
+            }
+
+
+            Record(property, undoMessage);
+
+            logic?.Invoke();
+
+            ApplyModifiedProperties(property);
         }
         #endregion
     }
