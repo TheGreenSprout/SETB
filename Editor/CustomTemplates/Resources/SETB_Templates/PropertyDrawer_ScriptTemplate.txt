@@ -4,6 +4,7 @@ using UnityEditor;
 using SETB;
 using static SETB.HandyEditorFunctions;
 
+#NAMESPACE_START#
 //[CustomPropertyDrawer(typeof(ClassName.PropertyName), true /*Children Scripts are affected*/)]
 public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
 {
@@ -13,3 +14,4 @@ public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
         DrawProperty(property, true);
     }
 }
+#NAMESPACE_END#

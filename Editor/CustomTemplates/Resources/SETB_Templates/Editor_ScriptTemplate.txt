@@ -5,6 +5,7 @@ using SETB;
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
+#NAMESPACE_START#
 //[CustomEditor(typeof(ClassName), true /*Children Scripts are affected*/)]
 public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
 {
@@ -15,3 +16,4 @@ public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
         // Your custom inspector code goes here.
     }
 }
+#NAMESPACE_END#

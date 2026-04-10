@@ -5,6 +5,7 @@ using SETB;
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
+#NAMESPACE_START#
 public class #SCRIPTNAME# : EditorWindow_Base<#SCRIPTNAME#>
 {
     [MenuItem("Tools/...")]
@@ -16,3 +17,4 @@ public class #SCRIPTNAME# : EditorWindow_Base<#SCRIPTNAME#>
         
     }
 }
+#NAMESPACE_END#

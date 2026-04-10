@@ -12,9 +12,7 @@ namespace SETB.CustomTemplates
         private static void CreateScriptFromTemplate(string templateName, string defaultFileName)
         {
             string template = LoadTemplate(templateName);
-
             if (string.IsNullOrEmpty(template)) return;
-
 
             string folder = GetSelectedPathOrFallback();
             string path = Path.Combine(folder, defaultFileName);
@@ -23,7 +21,6 @@ namespace SETB.CustomTemplates
             endNameEdit.templateText = template;
 
             var icon = EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D;
-
 
             ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
                 0,
@@ -34,7 +31,6 @@ namespace SETB.CustomTemplates
             );
         }
 
-
         private static string LoadTemplate(string templateName)
         {
             string packagePath = $"Packages/com.sproutinggames.sprouts.etb/Editor/CustomTemplates/Resources/SETB_Templates/{templateName}.txt";
@@ -42,13 +38,10 @@ namespace SETB.CustomTemplates
 
             if (templateAsset != null) return templateAsset.text;
 
-
             var resourceAsset = Resources.Load<TextAsset>("SETB_Templates/" + templateName);
-
             if (resourceAsset != null) return resourceAsset.text;
 
-
-            Debug.LogError($"Template not found in UPM or Resources: {templateName}");
+            Debug.LogError($"Template not found: {templateName}");
             return null;
         }
 
@@ -65,8 +58,47 @@ namespace SETB.CustomTemplates
                 break;
             }
 
-
             return path;
+        }
+        #endregion
+
+
+        #region Namespace Logic
+        public static string GetRootNamespace(string folderPath)
+        {
+            while (!string.IsNullOrEmpty(folderPath))
+            {
+                var guids = AssetDatabase.FindAssets("t:asmdef", new[] { folderPath });
+
+                if (guids.Length > 0)
+                {
+                    string asmdefPath = AssetDatabase.GUIDToAssetPath(guids[0]);
+                    string json = File.ReadAllText(asmdefPath);
+
+                    var data = JsonUtility.FromJson<AssemblyDefinitionData>(json);
+
+                    if (!string.IsNullOrEmpty(data.rootNamespace)) return data.rootNamespace;
+
+                    return data.name;
+                }
+
+                folderPath = Path.GetDirectoryName(folderPath);
+            }
+
+            return null;
+        }
+
+        
+        public static string Indent(string text, string indent = "\t")
+        {
+            var lines = text.Split('\n');
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (!string.IsNullOrWhiteSpace(lines[i])) lines[i] = indent + lines[i];
+            }
+
+            return string.Join("\n", lines);
         }
         #endregion
 
@@ -83,26 +115,67 @@ namespace SETB.CustomTemplates
 
         [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Script", false, 80)]
         public static void Create_PropertyDrawerScript() => CreateScriptFromTemplate("PropertyDrawer_ScriptTemplate", "NewPropertyDrawerScript.cs");
+
+
+        [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Managed Reference Script", false, 80)]
+        public static void Create_PropertyDrawerManagedReferenceScript() => CreateScriptFromTemplate("PropertyDrawer_ManagedReference_ScriptTemplate", "NewPropertyDrawerManagedReferenceScript.cs");
         #endregion
     }
 
+
+
+    #region Helper Classes
+    [System.Serializable]
+    public class AssemblyDefinitionData
+    {
+        public string name;
+        public string rootNamespace;
+    }
 
 
     public class CreateTemplateScriptAction : EndNameEditAction
     {
         public string templateText;
 
-
-
-
         public override void Action(int instanceId, string pathName, string resourceFile)
         {
-            string finalText = templateText.Replace("#SCRIPTNAME#", Path.GetFileNameWithoutExtension(pathName));
+            string scriptName = Path.GetFileNameWithoutExtension(pathName);
+            string folder = Path.GetDirectoryName(pathName);
+
+            string namespaceName = TemplateCreator.GetRootNamespace(folder);
+
+            string finalText = templateText.Replace("#SCRIPTNAME#", scriptName);
+
+            // Handle namespace wrapping
+            if (!string.IsNullOrEmpty(namespaceName))
+            {
+                int startIndex = finalText.IndexOf("#NAMESPACE_START#") + "#NAMESPACE_START#".Length;
+                int endIndex = finalText.IndexOf("#NAMESPACE_END#");
+
+                string before = finalText.Substring(0, startIndex);
+                string body = finalText.Substring(startIndex, endIndex - startIndex);
+                string after = finalText.Substring(endIndex);
+
+                body = TemplateCreator.Indent(body);
+
+                finalText = before + body + after;
+
+                finalText = finalText
+                    .Replace("#NAMESPACE#", namespaceName)
+                    .Replace("#NAMESPACE_START#", $"namespace {namespaceName}\n{{")
+                    .Replace("#NAMESPACE_END#", "}");
+            }
+            else
+            {
+                finalText = finalText
+                    .Replace("#NAMESPACE#", "")
+                    .Replace("#NAMESPACE_START#", "")
+                    .Replace("#NAMESPACE_END#", "");
+            }
 
             File.WriteAllText(pathName, finalText);
-
-
             AssetDatabase.ImportAsset(pathName);
         }
     }
+    #endregion
 }

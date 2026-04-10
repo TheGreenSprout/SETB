@@ -268,7 +268,7 @@ namespace SETB
                 return newIndex;
             }
 
-            protected void DrawManagedReferenceDropdown(SerializedProperty property, string label, Type[] types, string[] names, bool handleDraw = true)
+            protected void DrawManagedReferenceDropdown(SerializedProperty property, string label, Type[] types, string[] names, bool handleDraw = true, bool indent = true)
             {
                 int currentIndex = 0;
 
@@ -285,8 +285,6 @@ namespace SETB
                 int selectedIndex = DrawPopup(label, currentIndex, names, out bool changed);
 
 
-                if (isLayout) return;
-
                 RecordAndApply(property, () =>
                 {
                     if (changed) property.managedReferenceValue =
@@ -300,7 +298,11 @@ namespace SETB
                 if (!handleDraw) return;
 
                 Space();
-                if (property.managedReferenceValue != null) AllChildren(property);
+                if (property.managedReferenceValue != null)
+                {
+                    if (indent) Indent(() => AllChildren(property));
+                    else AllChildren(property);
+                }
             }
             #endregion
 
