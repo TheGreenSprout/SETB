@@ -64,14 +64,16 @@ namespace SETB
         /// <param name="content">The logic to run inside this area.</param>
         /// <param name="options">The horizontal area's GUILayoutOptions.</param>
         #endregion
-        public static void Horizontal(Action content, params GUILayoutOption[] options)
+        public static void Horizontal(Action content, string style = null, params GUILayoutOption[] options)
         {
-            EditorGUILayout.BeginHorizontal(options);
+            BeginHorizontal(style, options);
 
             content?.Invoke();
 
-            EditorGUILayout.EndHorizontal();
+            EndHorizontal();
         }
+        public static void BeginHorizontal(string style = null, params GUILayoutOption[] options) => EditorGUILayout.BeginHorizontal(style, options);
+        public static void EndHorizontal() => EditorGUILayout.EndHorizontal();
         #region XML doc
         /// <summary>
         /// Creates a vertical area.
@@ -79,14 +81,16 @@ namespace SETB
         /// <param name="content">The logic to run inside this area.</param>
         /// <param name="options">The vertical area's GUILayoutOptions.</param>
         #endregion
-        public static void Vertical(Action content, params GUILayoutOption[] options)
+        public static void Vertical(Action content, string style = null, params GUILayoutOption[] options)
         {
-            EditorGUILayout.BeginVertical(options);
-            
+            BeginVertical(style, options);
+
             content?.Invoke();
 
-            EditorGUILayout.EndVertical();
+            EndVertical();
         }
+        public static void BeginVertical(string style = null, params GUILayoutOption[] options) => EditorGUILayout.BeginVertical(style, options);
+        public static void EndVertical() => EditorGUILayout.EndVertical();
 
 
         #region XML doc
@@ -425,13 +429,13 @@ namespace SETB
         /// <param name="style">The GUIStyle of the button.</param>
         /// <param name="options">The button's GUILayoutOptions.</param>
         #endregion
-        public static void DrawButton(string buttonName, Action logic, GUIStyle style = null, params GUILayoutOption[] options)
+        public static bool DrawButton(string buttonName, Action logic = null, GUIStyle style = null, params GUILayoutOption[] options)
         {
-            if (style == null)
-            {
-                if (GUILayout.Button(buttonName, options)) logic?.Invoke();
-            }
-            else if (GUILayout.Button(buttonName, style, options)) logic?.Invoke();
+            bool button = style == null ? GUILayout.Button(buttonName, options) : GUILayout.Button(buttonName, style, options);
+            
+            if (button) logic?.Invoke();
+
+            return button;
         }
 
 
