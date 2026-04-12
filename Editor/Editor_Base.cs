@@ -111,7 +111,7 @@ namespace SETB
             => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, target, delayedSearch, styles, options);
         
         
-        protected void Record(string name = "Inspector Change") => HandyEditorFunctions.Record(target, name);
+        protected void RecordTarget(string name = "Inspector Change") => HandyEditorFunctions.Record(target, name);
         #endregion
 
 

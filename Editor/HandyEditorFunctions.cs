@@ -557,11 +557,14 @@ namespace SETB
         {
             if (property.serializedObject.targetObject != null) Undo.RecordObject(property.serializedObject.targetObject, name);
         }
-
         public static void Record(UnityEngine.Object target, string name = "Change")
         {
             if (target != null) Undo.RecordObject(target, name);
         }
+
+
+        public static void SetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
+        public static void SetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
         #endregion
     }
 

@@ -154,6 +154,13 @@ namespace SETB
 
             EditorGUILayout.LabelField(text, style, options);
         }
+        public static void DrawLabel(string text, string text2, GUIStyle style = null, params GUILayoutOption[] options)
+        {
+            if (style == null) style = EditorStyles.label;
+
+            EditorGUILayout.LabelField(text, text2, style, options);
+        }
+
         #region XML doc
         /// <summary>
         /// Creates a selectable label.
@@ -225,12 +232,13 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static void DrawSelectionPopup(ref Enum value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
+        public static void DrawSelectionPopup<T>(ref T value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options) where T : Enum
         {
             if (style == null) style = EditorStyles.popup;
 
             
-            ChangeValue(ref value, EditorGUILayout.EnumPopup(value, style, options), record);
+            var newValue = (T)EditorGUILayout.EnumPopup(value, style, options);
+            ChangeValue(ref value, newValue, record);
         }
 
         #region XML doc
