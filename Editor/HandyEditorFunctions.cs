@@ -563,8 +563,8 @@ namespace SETB
         }
 
 
-        public static void SetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
-        public static void SetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
+        public static void UtilitySetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
+        public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
         #endregion
     }
 
