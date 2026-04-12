@@ -72,7 +72,10 @@ namespace SETB
 
             EndHorizontal();
         }
-        public static void BeginHorizontal(string style = null, params GUILayoutOption[] options) => EditorGUILayout.BeginHorizontal(style, options);
+        public static void BeginHorizontal(string style = null, params GUILayoutOption[] options){
+            if (style == null) EditorGUILayout.BeginHorizontal(options);
+            else EditorGUILayout.BeginHorizontal(style, options);
+        }
         public static void EndHorizontal() => EditorGUILayout.EndHorizontal();
         #region XML doc
         /// <summary>
@@ -89,7 +92,10 @@ namespace SETB
 
             EndVertical();
         }
-        public static void BeginVertical(string style = null, params GUILayoutOption[] options) => EditorGUILayout.BeginVertical(style, options);
+        public static void BeginVertical(string style = null, params GUILayoutOption[] options){
+            if (style == null) EditorGUILayout.BeginVertical(options);
+            else EditorGUILayout.BeginVertical(style, options);
+        }
         public static void EndVertical() => EditorGUILayout.EndVertical();
 
 
