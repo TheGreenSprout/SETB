@@ -210,10 +210,8 @@ namespace SETB
         #endregion
         public static void DrawToggleLeft(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
         {
-            if (style == null) style = EditorStyles.toggle;
-
-
-            value = EditorGUILayout.ToggleLeft(label, value, style, options);
+            if (style == null) value = EditorGUILayout.ToggleLeft(label, value, options);
+            else value = EditorGUILayout.ToggleLeft(label, value, style, options);
         }
 
 
