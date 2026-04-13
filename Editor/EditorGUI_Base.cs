@@ -316,7 +316,7 @@ namespace SETB
 
             else if (field is SerializedProperty sp)
             {
-                DrawInputSerializedProperty(label, sp, options);
+                DrawInputProperty(label, sp, options);
                 return (E)newValue;
             }
 
@@ -408,7 +408,7 @@ namespace SETB
         public static object DrawInputEnum(string label, object value, GUIStyle style = null, params GUILayoutOption[] options)
             => EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
 
-        public static bool DrawInputSerializedProperty(string label, SerializedProperty property, params GUILayoutOption[] options)
+        public static bool DrawInputProperty(string label, SerializedProperty property, params GUILayoutOption[] options)
             => EditorGUILayout.PropertyField(property, label == null ? null : new GUIContent(label), options);
 
         public static void DrawInputObject<T>(string label, ref T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object

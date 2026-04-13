@@ -20,20 +20,12 @@ namespace SETB
 
         private string cacheSaveStr = "";
         private Dictionary<string, float> cacheScoreDictionary = new();
-
-
-        private Dictionary<string, SerializedProperty> propCache = new();
         #endregion
 
 
 
         #region Unity Methods
-        protected virtual void OnEnable()
-        {
-            this.Load_AttributeEditorPrefs();
-
-            propCache.Clear();
-        }
+        protected virtual void OnEnable() => this.Load_AttributeEditorPrefs();
         
 
         protected virtual void OnDisable() => this.Save_AttributeEditorPrefs();
@@ -156,10 +148,9 @@ namespace SETB
             => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, null, delayedSearch, styles, options);
         
         
-        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
-            => FindPropertyRelative(prop, relativePath, propCache);
+        protected SerializedProperty Prop(SerializedObject obj, string name) => FindProperty(obj, name);
 
-        protected SerializedProperty Prop(SerializedObject obj, string name) => FindProperty(obj, name, propCache);
+        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath) => FindPropertyRelative(prop, relativePath);
         #endregion
 
 

@@ -93,9 +93,6 @@ namespace SETB
         }
 
 
-        private Dictionary<string, SerializedProperty> propCache = new();
-
-
 
         protected float singleLineHeight => EditorGUIUtility.singleLineHeight;
 
@@ -106,9 +103,6 @@ namespace SETB
 
 
         #region Unity Methods
-        protected virtual void OnEnable() => propCache.Clear();
-
-
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
@@ -485,12 +479,12 @@ namespace SETB
 
         
         #region Proxy
-        protected SerializedProperty PropRelative(string relativePath) => FindPropertyRelative(targetProperty, relativePath, propCache);
-        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
-            => prop == null ? PropRelative(relativePath) : FindPropertyRelative(prop, relativePath, propCache);
+        protected SerializedProperty Prop(string name) => FindProperty(targetObject, name);
+        protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name);
 
-        protected SerializedProperty Prop(string name) => FindProperty(targetObject, name, propCache);
-        protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name, propCache);
+        protected SerializedProperty PropRelative(string relativePath) => FindPropertyRelative(targetProperty, relativePath);
+        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
+            => prop == null ? PropRelative(relativePath) : FindPropertyRelative(prop, relativePath);
 
 
         protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
