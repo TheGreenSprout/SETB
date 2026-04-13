@@ -44,7 +44,8 @@ namespace SETB
 
 
         protected SerializedProperty targetProperty;
-        protected UnityEngine.Object target => targetProperty?.serializedObject.targetObject;
+        protected SerializedObject targetObject => targetProperty?.serializedObject;
+        protected UnityEngine.Object target => targetObject?.targetObject;
 
 
 
@@ -92,6 +93,9 @@ namespace SETB
         }
 
 
+        private Dictionary<string, SerializedProperty> propCache = new();
+
+
 
         protected float singleLineHeight => EditorGUIUtility.singleLineHeight;
 
@@ -102,15 +106,15 @@ namespace SETB
 
 
         #region Unity Methods
+        protected virtual void OnEnable() => propCache.Clear();
+
+
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
 
 
             targetProperty = property;
-
-            //position = EditorGUI.PrefixLabel(position, label);
-
 
             ctx = new LayoutContext(position);
             isDrawing = true;
@@ -121,7 +125,6 @@ namespace SETB
             EditorGUI.EndProperty();
         }
 
-        
         public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
         {
             targetProperty = property;
@@ -135,7 +138,6 @@ namespace SETB
 
             return ctx.HeightUsed;
         }
-
         protected float GetPropertyHeight(SerializedProperty prop, bool includeChildren = true)
             => EditorGUI.GetPropertyHeight(prop, includeChildren);
         #endregion
@@ -481,15 +483,25 @@ namespace SETB
         #endregion
 
 
+        
+        #region Proxy
+        protected SerializedProperty PropRelative(string relativePath) => FindPropertyRelative(targetProperty, relativePath, propCache);
+        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
+            => prop == null ? PropRelative(relativePath) : FindPropertyRelative(prop, relativePath, propCache);
+
+        protected SerializedProperty Prop(string name) => FindProperty(targetObject, name, propCache);
+        protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name, propCache);
+
+
+        protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
+        #endregion
+
+
 
         #region Misc
-        protected SerializedProperty Find(string relativePath, SerializedProperty property = null)
-            => (property ?? targetProperty).FindPropertyRelative(relativePath);
-
-
         protected E GetValue<E>(string relativePath, SerializedProperty property = null)
         {
-            var prop = Find(relativePath, property);
+            var prop = PropRelative(property, relativePath);
 
             return prop switch
             {
@@ -503,7 +515,7 @@ namespace SETB
 
         protected void SetValue<E>(string relativePath, E value, SerializedProperty property = null)
         {
-            var prop = Find(relativePath, property);
+            var prop = PropRelative(property, relativePath);
 
             switch (prop.propertyType)
             {
@@ -562,8 +574,7 @@ namespace SETB
         }
 
 
-        protected void ApplyModifiedProperties(SerializedProperty property = null)
-            => (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
+        protected void ApplyModifiedProperties(SerializedProperty property = null) => (property ?? targetProperty).serializedObject.ApplyModifiedProperties();
 
         protected void RecordAndApply(SerializedProperty property, Action logic, string undoMessage = "Change Property")
         {
@@ -581,6 +592,7 @@ namespace SETB
 
             ApplyModifiedProperties(property);
         }
+        protected void RecordAndApplyTarget(string name = "Inspector Change") => RecordAndApply(targetProperty, null, name);
         #endregion
     }
 }

@@ -553,6 +553,37 @@ namespace SETB
 
 
         #region Misc
+        public static SerializedProperty FindProperty(SerializedObject serializedObject, string name, Dictionary<string, SerializedProperty> cache = null)
+        {
+            if (cache == null) return serializedObject.FindProperty(name);
+
+
+            string key = serializedObject.targetObject.GetInstanceID() + "." + name;
+
+            if (!cache.TryGetValue(key, out var prop))
+            {
+                prop = serializedObject.FindProperty(name);
+                cache[key] = prop;
+            }
+            return prop;
+        }
+
+        public static SerializedProperty FindPropertyRelative(SerializedProperty target, string relativePath, Dictionary<string, SerializedProperty> cache = null)
+        {
+            if (cache == null) return target.FindPropertyRelative(relativePath);
+
+
+            string key = target.propertyPath + "." + relativePath;
+
+            if (!cache.TryGetValue(key, out var prop))
+            {
+                prop = target.FindPropertyRelative(relativePath);
+                cache[key] = prop;
+            }
+            return prop;
+        }
+
+
         public static void Record(SerializedProperty property, string name = "Change")
         {
             if (property.serializedObject.targetObject != null) Undo.RecordObject(property.serializedObject.targetObject, name);

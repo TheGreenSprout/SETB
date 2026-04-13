@@ -111,23 +111,19 @@ namespace SETB
             => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, target, delayedSearch, styles, options);
         
         
-        protected void RecordTarget(string name = "Inspector Change") => HandyEditorFunctions.Record(target, name);
+        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
+            => FindPropertyRelative(prop, relativePath, propCache);
+            
+        protected SerializedProperty Prop(string name) => FindProperty(serializedObject, name, propCache);
+        protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name, propCache);
+
+
+        protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
         #endregion
 
 
 
         #region Misc
-        protected SerializedProperty Prop(string name)
-        {
-            if (!propCache.TryGetValue(name, out var prop))
-            {
-                prop = serializedObject.FindProperty(name);
-                propCache[name] = prop;
-            }
-            return prop;
-        }
-
-
         protected void Validate(bool condition, string message, MessageType type = MessageType.Warning)
         {
             if (!condition) EditorGUILayout.HelpBox(message, type);
