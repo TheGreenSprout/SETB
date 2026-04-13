@@ -198,16 +198,10 @@ namespace SETB
         /// <param name="style">The GUIStyle of the toggle.</param>
         /// <param name="options">The toggle's GUILayoutOptions.</param>
         #endregion
-        public static bool DrawToggle(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
-        {
-            if (style == null) style = EditorStyles.toggle;
-
-
-            value = EditorGUILayout.Toggle(label, value, style, options);
-
-
-            return value;
-        }
+        public static void DrawToggle(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
+            => value = EditorGUILayout.Toggle(label, value, style ?? EditorStyles.toggle, options);
+        public static bool DrawToggle(string label, bool value, GUIStyle style = null, params GUILayoutOption[] options)
+            => EditorGUILayout.Toggle(label, value, style ?? EditorStyles.toggle, options);
 
         #region XML doc
         /// <summary>
@@ -218,12 +212,16 @@ namespace SETB
         /// <param name="style">The GUIStyle of the toggle.</param>
         /// <param name="options">The toggle's GUILayoutOptions.</param>
         #endregion
-        public static bool DrawToggleLeft(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
+        public static void DrawToggleLeft(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
+        {
+            if (style == null) value = EditorGUILayout.ToggleLeft(label, value, options);
+            else value = EditorGUILayout.ToggleLeft(label, value, style, options);
+        }
+        public static bool DrawToggleLeft(string label, bool value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             if (style == null) value = EditorGUILayout.ToggleLeft(label, value, options);
             else value = EditorGUILayout.ToggleLeft(label, value, style, options);
 
-
             return value;
         }
 
@@ -238,17 +236,13 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static T DrawSelectionPopup<T>(ref T value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options) where T : Enum
+        public static void DrawSelectionPopup<T>(ref T value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options) where T : Enum
         {
-            if (style == null) style = EditorStyles.popup;
-
-            
-            var newValue = (T)EditorGUILayout.EnumPopup(value, style, options);
+            var newValue = (T)EditorGUILayout.EnumPopup(value, style ?? EditorStyles.popup, options);
             ChangeValue(ref value, newValue, record);
-
-
-            return value;
         }
+        public static T DrawSelectionPopup<T>(T value, GUIStyle style = null, params GUILayoutOption[] options) where T : Enum
+            => (T)EditorGUILayout.EnumPopup(value, style ?? EditorStyles.popup, options);
 
         #region XML doc
         /// <summary>
@@ -260,19 +254,21 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static int DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
+        public static void DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
         {
             if (style == null) style = EditorStyles.popup;
 
 
             int newValue;
-            if (int_optionalOptions != null) newValue = EditorGUILayout.IntPopup(value, intOrGeneric_options, int_optionalOptions, style, options);
-            else newValue = EditorGUILayout.Popup(value, intOrGeneric_options, style, options);
+            if (int_optionalOptions != null) newValue = EditorGUILayout.IntPopup(value, intOrGeneric_options, int_optionalOptions, style ?? EditorStyles.popup, options);
+            else newValue = EditorGUILayout.Popup(value, intOrGeneric_options, style ?? EditorStyles.popup, options);
 
             ChangeValue(ref value, newValue, record);
-
-
-            return value;
+        }
+        public static int DrawSelectionPopup(int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, params GUILayoutOption[] options)
+        {
+            if (int_optionalOptions != null) return EditorGUILayout.IntPopup(value, intOrGeneric_options, int_optionalOptions, style ?? EditorStyles.popup, options);
+            else return EditorGUILayout.Popup(value, intOrGeneric_options, style ?? EditorStyles.popup, options);
         }
 
 
