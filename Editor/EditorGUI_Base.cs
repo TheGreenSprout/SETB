@@ -1081,47 +1081,91 @@ namespace SETB
         #endregion
         public static void DrawLabeledSlider<E>(string label, ref E value, E min, E max, bool resetValuePresent = false, E resetValue = default, GUIStyle resetButtonStyle = null, params GUILayoutOption[] options)
         {
-            EditorGUILayout.BeginHorizontal();
+            var _value = value;
 
-            Type e = typeof(E);
-            if (e == typeof(short) || e == typeof(int) || e == typeof(long))
+            Horizontal(() =>
             {
-                value = (E)(object)EditorGUILayout.IntSlider(new GUIContent(label), (int)(object)value, (int)(object)min, (int)(object)max, options);
-
-                if (resetValuePresent)
+                Type e = typeof(E);
+                if (e == typeof(short) || e == typeof(int) || e == typeof(long))
                 {
-                    E val = value;
+                    _value = (E)(object)EditorGUILayout.IntSlider(new GUIContent(label), (int)(object)_value, (int)(object)min, (int)(object)max, options);
 
-                    DrawButton("Reset", () =>
+                    if (resetValuePresent)
                     {
-                        val = resetValue;
-                    }, resetButtonStyle, options);
+                        E val = _value;
 
-                    value = val;
+                        DrawButton("Reset", () =>
+                        {
+                            val = resetValue;
+                        }, resetButtonStyle, options);
+
+                        _value = val;
+                    }
                 }
-            }
-            else if (e == typeof(float) || e == typeof(double))
-            {
-                value = (E)(object)EditorGUILayout.Slider(label, (float)(object)value, (float)(object)min, (float)(object)max, options);
-
-                if (!Mathf.Approximately((float)(object)resetValue, default))
+                else if (e == typeof(float) || e == typeof(double))
                 {
-                    E val = value;
+                    _value = (E)(object)EditorGUILayout.Slider(label, (float)(object)_value, (float)(object)min, (float)(object)max, options);
 
-                    DrawButton("Reset", () =>
+                    if (!Mathf.Approximately((float)(object)resetValue, default))
                     {
-                        val = resetValue;
-                    }, resetButtonStyle, options);
+                        E val = _value;
 
-                    value = val;
+                        DrawButton("Reset", () =>
+                        {
+                            val = resetValue;
+                        }, resetButtonStyle, options);
+
+                        _value = val;
+                    }
                 }
-            }
-            else
-            {
-                throw new NotSupportedException($"Type {e} is not supported by DrawLabeledSlider.");
-            }
+                else throw new NotSupportedException($"Type {e} is not supported by DrawLabeledSlider.");
+            });
 
-            EditorGUILayout.EndHorizontal();
+            value = _value;
+        }
+        public static E DrawLabeledSlider<E>(string label, E value, E min, E max, bool resetValuePresent = false, E resetValue = default, GUIStyle resetButtonStyle = null, params GUILayoutOption[] options)
+        {
+            var _value = value;
+            
+            Horizontal(() =>
+            {
+                Type e = typeof(E);
+                if (e == typeof(short) || e == typeof(int) || e == typeof(long))
+                {
+                    _value = (E)(object)EditorGUILayout.IntSlider(new GUIContent(label), (int)(object)_value, (int)(object)min, (int)(object)max, options);
+
+                    if (resetValuePresent)
+                    {
+                        E val = _value;
+
+                        DrawButton("Reset", () =>
+                        {
+                            val = resetValue;
+                        }, resetButtonStyle, options);
+
+                        _value = val;
+                    }
+                }
+                else if (e == typeof(float) || e == typeof(double))
+                {
+                    _value = (E)(object)EditorGUILayout.Slider(label, (float)(object)_value, (float)(object)min, (float)(object)max, options);
+
+                    if (!Mathf.Approximately((float)(object)resetValue, default))
+                    {
+                        E val = _value;
+
+                        DrawButton("Reset", () =>
+                        {
+                            val = resetValue;
+                        }, resetButtonStyle, options);
+
+                        _value = val;
+                    }
+                }
+                else throw new NotSupportedException($"Type {e} is not supported by DrawLabeledSlider.");
+            });
+
+            return _value;
         }
         #endregion
     
