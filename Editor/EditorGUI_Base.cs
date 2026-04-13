@@ -198,12 +198,15 @@ namespace SETB
         /// <param name="style">The GUIStyle of the toggle.</param>
         /// <param name="options">The toggle's GUILayoutOptions.</param>
         #endregion
-        public static void DrawToggle(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
+        public static bool DrawToggle(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             if (style == null) style = EditorStyles.toggle;
 
 
             value = EditorGUILayout.Toggle(label, value, style, options);
+
+
+            return value;
         }
 
         #region XML doc
@@ -215,10 +218,13 @@ namespace SETB
         /// <param name="style">The GUIStyle of the toggle.</param>
         /// <param name="options">The toggle's GUILayoutOptions.</param>
         #endregion
-        public static void DrawToggleLeft(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
+        public static bool DrawToggleLeft(string label, ref bool value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             if (style == null) value = EditorGUILayout.ToggleLeft(label, value, options);
             else value = EditorGUILayout.ToggleLeft(label, value, style, options);
+
+
+            return value;
         }
 
 
@@ -232,13 +238,16 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static void DrawSelectionPopup<T>(ref T value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options) where T : Enum
+        public static T DrawSelectionPopup<T>(ref T value, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options) where T : Enum
         {
             if (style == null) style = EditorStyles.popup;
 
             
             var newValue = (T)EditorGUILayout.EnumPopup(value, style, options);
             ChangeValue(ref value, newValue, record);
+
+
+            return value;
         }
 
         #region XML doc
@@ -251,7 +260,7 @@ namespace SETB
         /// <param name="style">The GUIStyle of the popup.</param>
         /// <param name="options">The popup's GUILayoutOptions.</param>
         #endregion
-        public static void DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
+        public static int DrawSelectionPopup(ref int value, string[] intOrGeneric_options = null, int[] int_optionalOptions = null, GUIStyle style = null, UnityEngine.Object record = null, params GUILayoutOption[] options)
         {
             if (style == null) style = EditorStyles.popup;
 
@@ -261,144 +270,69 @@ namespace SETB
             else newValue = EditorGUILayout.Popup(value, intOrGeneric_options, style, options);
 
             ChangeValue(ref value, newValue, record);
+
+
+            return value;
         }
 
 
-        public static void DrawInputField<E>(string label, ref E field, GUIStyle style = null, UnityEngine.Object record = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, bool? passwordOrTag = null, bool allowSceneObjects = true, params GUILayoutOption[] options)
+        public static E DrawInputField<E>(string label, ref E field, GUIStyle style = null, UnityEngine.Object record = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, bool? passwordOrTag = null, bool allowSceneObjects = true, params GUILayoutOption[] options)
         {
             object newValue = field;
 
 
-            if (field is string s)
-            {
-                DrawInputString(label, ref s, style, delayed, passwordOrTag, options);
-                newValue = s;
-            }
+            if (field is string s) newValue = DrawInputString(label, s, style, delayed, passwordOrTag, options);
 
-            else if (field is int i)
-            {
-                DrawInputInt(label, ref i, style, delayed, layerOrMask, displayedMaskOptions, options);
-                newValue = i;
-            }
+            else if (field is int i) newValue = DrawInputInt(label, i, style, delayed, layerOrMask, displayedMaskOptions, options);
 
-            else if (field is long l)
-            {
-                DrawInputLong(label, ref l, style, options);
-                newValue = l;
-            }
+            else if (field is long l) newValue = DrawInputLong(label, l, style, options);
 
-            else if (field is float f)
-            {
-                DrawInputFloat(label, ref f, style, delayed, options);
-                newValue = f;
-            }
+            else if (field is float f) newValue = DrawInputFloat(label, f, style, delayed, options);
 
-            else if (field is double d)
-            {
-                DrawInputDouble(label, ref d, style, delayed, options);
-                newValue = d;
-            }
+            else if (field is double d) newValue = DrawInputDouble(label, d, style, delayed, options);
 
-            else if (field is Vector2 v2)
-            {
-                DrawInputVector2(label, ref v2, options);
-                newValue = v2;
-            }
+            else if (field is Vector2 v2) newValue = DrawInputVector2(label, v2, options);
 
-            else if (field is Vector2Int v2i)
-            {
-                DrawInputVector2Int(label, ref v2i, options);
-                newValue = v2i;
-            }
+            else if (field is Vector2Int v2i) newValue = DrawInputVector2Int(label, v2i, options);
 
-            else if (field is Vector3 v3)
-            {
-                DrawInputVector3(label, ref v3, options);
-                newValue = v3;
-            }
+            else if (field is Vector3 v3) newValue = DrawInputVector3(label, v3, options);
 
-            else if (field is Vector3Int v3i)
-            {
-                DrawInputVector3Int(label, ref v3i, options);
-                newValue = v3i;
-            }
+            else if (field is Vector3Int v3i) newValue = DrawInputVector3Int(label, v3i, options);
 
-            else if (field is Vector4 v4)
-            {
-                DrawInputVector4(label, ref v4, options);
-                newValue = v4;
-            }
+            else if (field is Vector4 v4) newValue = DrawInputVector4(label, v4, options);
 
-            else if (field is Color c)
-            {
-                DrawInputColor(label, ref c, options);
-                newValue = c;
-            }
+            else if (field is Color c) newValue = DrawInputColor(label, c, options);
 
-            else if (field is Gradient g)
-            {
-                DrawInputGradient(label, ref g, options);
-                newValue = g;
-            }
+            else if (field is Gradient g) newValue = DrawInputGradient(label, g, options);
 
-            else if (field is Rect r)
-            {
-                DrawInputRect(label, ref r, options);
-                newValue = r;
-            }
+            else if (field is Rect r) newValue = DrawInputRect(label, r, options);
 
-            else if (field is RectInt rint)
-            {
-                DrawInputRectInt(label, ref rint, options);
-                newValue = rint;
-            }
+            else if (field is RectInt rint) newValue = DrawInputRectInt(label, rint, options);
 
-            else if (field is Bounds b)
-            {
-                DrawInputBounds(label, ref b, options);
-                newValue = b;
-            }
-            else if (field is BoundsInt bint)
-            {
-                DrawInputBoundsInt(label, ref bint, options);
-                newValue = bint;
-            }
+            else if (field is Bounds b) newValue = DrawInputBounds(label, b, options);
+            else if (field is BoundsInt bint) newValue = DrawInputBoundsInt(label, bint, options);
 
-            else if (typeof(E).IsEnum)
-            {
-                var en = (object)field;
-                DrawInputEnum(label, ref en, style, options);
-                newValue = en;
-            }
+            else if (typeof(E).IsEnum) newValue = DrawInputEnum(label, newValue, style, options);
 
             else if (field is SerializedProperty sp)
             {
                 DrawInputSerializedProperty(label, sp, options);
-                return;
+                return (E)newValue;
             }
 
-            else if (field is AnimationCurve curve)
-            {
-                DrawInputCurve(label, ref curve, options);
-                newValue = curve;
-            }
+            else if (field is AnimationCurve curve) newValue = DrawInputCurve(label, curve, options);
 
-            else if (field is uint ui)
-            {
-                DrawInputUInt(label, ref ui, style, options);
-                newValue = ui;
-            }
+            else if (field is uint ui) newValue = DrawInputUInt(label, ui, style, options);
 
-            else if (field  is UnityEngine.Object obj)
-            {
-                DrawInputObject(label, ref obj, allowSceneObjects, options);
-                newValue = obj;
-            }
+            else if (field  is UnityEngine.Object obj) newValue = DrawInputObject(label, obj, allowSceneObjects, options);
 
             else throw new NotSupportedException($"Unsupported type: {typeof(E).Name}");
 
 
             ChangeValue(ref field, (E)newValue, record);
+
+
+            return (E)newValue;
         }
 
         #region Individual Input Drawers
@@ -410,6 +344,14 @@ namespace SETB
                                                                     : EditorGUILayout.TagField(label, value, style, options);
             else value = delayed ? EditorGUILayout.DelayedTextField(label, value, style, options) : EditorGUILayout.TextField(label, value, style, options);
         }
+        public static string DrawInputString(string label, string value, GUIStyle style = null, bool delayed = false, bool? passwordOrTag = null, params GUILayoutOption[] options)
+        {
+            style ??= EditorStyles.textField;
+
+            if (passwordOrTag != null) return passwordOrTag.Value ? EditorGUILayout.PasswordField(label, value, style, options)
+                                                                    : EditorGUILayout.TagField(label, value, style, options);
+            else return delayed ? EditorGUILayout.DelayedTextField(label, value, style, options) : EditorGUILayout.TextField(label, value, style, options);
+        }
 
         public static void DrawInputInt(string label, ref int value, GUIStyle style = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, params GUILayoutOption[] options)
         {
@@ -419,32 +361,52 @@ namespace SETB
                                                                 : EditorGUILayout.MaskField(new GUIContent(label), value, displayedMaskOptions, style, options);
             else value = delayed ? EditorGUILayout.DelayedIntField(label, value, style, options) : EditorGUILayout.IntField(label, value, style, options);
         }
+        public static int DrawInputInt(string label, int value, GUIStyle style = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, params GUILayoutOption[] options)
+        {
+            style ??= EditorStyles.numberField;
+
+            if (layerOrMask) return displayedMaskOptions == null ? EditorGUILayout.LayerField(label, value, style, options)
+                                                                : EditorGUILayout.MaskField(new GUIContent(label), value, displayedMaskOptions, style, options);
+            else return delayed ? EditorGUILayout.DelayedIntField(label, value, style, options) : EditorGUILayout.IntField(label, value, style, options);
+        }
 
         public static void DrawInputLong(string label, ref long value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.LongField(label, value, style ?? EditorStyles.numberField, options);
         }
+        public static long DrawInputLong(string label, long value, GUIStyle style = null, params GUILayoutOption[] options)
+            => EditorGUILayout.LongField(label, value, style ?? EditorStyles.numberField, options);
 
         public static void DrawInputFloat(string label, ref float value, GUIStyle style = null, bool delayed = false, params GUILayoutOption[] options)
         {
             value = delayed ? EditorGUILayout.DelayedFloatField(label, value, style ?? EditorStyles.numberField, options)
                             : EditorGUILayout.FloatField(label, value, style ?? EditorStyles.numberField, options);
         }
+        public static float DrawInputFloat(string label, float value, GUIStyle style = null, bool delayed = false, params GUILayoutOption[] options)
+            => delayed ? EditorGUILayout.DelayedFloatField(label, value, style ?? EditorStyles.numberField, options)
+                        : EditorGUILayout.FloatField(label, value, style ?? EditorStyles.numberField, options);
 
         public static void DrawInputDouble(string label, ref double value, GUIStyle style = null, bool delayed = false, params GUILayoutOption[] options)
         {
             value = delayed ? EditorGUILayout.DelayedDoubleField(label, value, style ?? EditorStyles.numberField, options)
                             : EditorGUILayout.DoubleField(label, value, style ?? EditorStyles.numberField, options);
         }
+        public static double DrawInputDouble(string label, double value, GUIStyle style = null, bool delayed = false, params GUILayoutOption[] options)
+            => delayed ? EditorGUILayout.DelayedDoubleField(label, value, style ?? EditorStyles.numberField, options)
+                        : EditorGUILayout.DoubleField(label, value, style ?? EditorStyles.numberField, options);
 
         public static void DrawInputEnum<T>(string label, ref T value, GUIStyle style = null, params GUILayoutOption[] options) where T : Enum
         {
             value = (T)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)value, style ?? EditorStyles.textField, options);
         }
+        public static T DrawInputEnum<T>(string label, T value, GUIStyle style = null, params GUILayoutOption[] options) where T : Enum
+            => (T)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)value, style ?? EditorStyles.textField, options);
         public static void DrawInputEnum(string label, ref object value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
         }
+        public static object DrawInputEnum(string label, object value, GUIStyle style = null, params GUILayoutOption[] options)
+            => EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
 
         public static bool DrawInputSerializedProperty(string label, SerializedProperty property, params GUILayoutOption[] options)
             => EditorGUILayout.PropertyField(property, label == null ? null : new GUIContent(label), options);
@@ -453,63 +415,91 @@ namespace SETB
         {
             value = (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
         }
+        public static T DrawInputObject<T>(string label, T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object
+            => (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
 
         public static void DrawInputVector2(string label, ref Vector2 value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.Vector2Field(label, value, options);
         }
+        public static Vector2 DrawInputVector2(string label, Vector2 value, params GUILayoutOption[] options)
+            => EditorGUILayout.Vector2Field(label, value, options);
         public static void DrawInputVector2Int(string label, ref Vector2Int value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.Vector2IntField(label, value, options);
         }
+        public static Vector2Int DrawInputVector2Int(string label, Vector2Int value, params GUILayoutOption[] options)
+            => EditorGUILayout.Vector2IntField(label, value, options);
         public static void DrawInputVector3(string label, ref Vector3 value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.Vector3Field(label, value, options);
         }
+        public static Vector3 DrawInputVector3(string label, Vector3 value, params GUILayoutOption[] options)
+            => EditorGUILayout.Vector3Field(label, value, options);
         public static void DrawInputVector3Int(string label, ref Vector3Int value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.Vector3IntField(label, value, options);
         }
+        public static Vector3Int DrawInputVector3Int(string label, Vector3Int value, params GUILayoutOption[] options)
+            => EditorGUILayout.Vector3IntField(label, value, options);
         public static void DrawInputVector4(string label, ref Vector4 value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.Vector4Field(label, value, options);
         }
+        public static Vector4 DrawInputVector4(string label, Vector4 value, params GUILayoutOption[] options)
+            => EditorGUILayout.Vector4Field(label, value, options);
 
         public static void DrawInputColor(string label, ref Color value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.ColorField(label, value, options);
         }
+        public static Color DrawInputColor(string label, Color value, params GUILayoutOption[] options)
+            => EditorGUILayout.ColorField(label, value, options);
         public static void DrawInputGradient(string label, ref Gradient value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.GradientField(label, value, options);
         }
+        public static Gradient DrawInputGradient(string label, Gradient value, params GUILayoutOption[] options)
+            => EditorGUILayout.GradientField(label, value, options);
 
         public static void DrawInputRect(string label, ref Rect value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.RectField(label, value, options);
         }
+        public static Rect DrawInputRect(string label, Rect value, params GUILayoutOption[] options)
+            => EditorGUILayout.RectField(label, value, options);
         public static void DrawInputRectInt(string label, ref RectInt value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.RectIntField(label, value, options);
         }
+        public static RectInt DrawInputRectInt(string label, RectInt value, params GUILayoutOption[] options)
+            => EditorGUILayout.RectIntField(label, value, options);
         public static void DrawInputBounds(string label, ref Bounds value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.BoundsField(label, value, options);
         }
+        public static Bounds DrawInputBounds(string label, Bounds value, params GUILayoutOption[] options)
+            => EditorGUILayout.BoundsField(label, value, options);
         public static void DrawInputBoundsInt(string label, ref BoundsInt value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.BoundsIntField(label, value, options);
         }
+        public static BoundsInt DrawInputBoundsInt(string label, BoundsInt value, params GUILayoutOption[] options)
+            => EditorGUILayout.BoundsIntField(label, value, options);
 
         public static void DrawInputCurve(string label, ref AnimationCurve value, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.CurveField(label, value, options);
         }
+        public static AnimationCurve DrawInputCurve(string label, AnimationCurve value, params GUILayoutOption[] options)
+            => EditorGUILayout.CurveField(label, value, options);
 
         public static void DrawInputUInt(string label, ref uint value, GUIStyle style = null, params GUILayoutOption[] options)
         {
             value = EditorGUILayout.RenderingLayerMaskField(label, value, style ?? EditorStyles.numberField, options);
         }
+        public static uint DrawInputUInt(string label, uint value, GUIStyle style = null, params GUILayoutOption[] options)
+            => EditorGUILayout.RenderingLayerMaskField(label, value, style ?? EditorStyles.numberField, options);
         #endregion
         #endregion
 
