@@ -182,7 +182,7 @@ namespace SETB
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         /// <returns>Returns whether the EditorPref exists.</returns>
         #endregion
-        public static bool HasEditorPref(string key, EditorPrefID id = null) => EditorPrefs.HasKey(GetEditorPrefID(key, id));
+        public static bool HasEditorPref(string key, EditorPrefID? id = null) => EditorPrefs.HasKey(GetEditorPrefID(key, id));
 
 
         #region XML doc
@@ -224,7 +224,7 @@ namespace SETB
         /// <param name="value">The value to save.</param>
         /// <param name="localized">Whether the key is to be localized.</param>
         #endregion
-        public static void SetEditorPref<T>(string key, T value, EditorPrefID id = null)
+        public static void SetEditorPref<T>(string key, T value, EditorPrefID? id = null)
         {
             string newKey;
             newKey = GetEditorPrefID(key, id);
@@ -276,7 +276,7 @@ namespace SETB
         /// <param name="defaultValue">The default value of this EditorPref.</param>
         /// <returns>Returns the value of the EditorPref.</returns>
         #endregion
-        public static T GetEditorPref<T>(string key, T defaultValue = default, EditorPrefID id = null)
+        public static T GetEditorPref<T>(string key, T defaultValue = default, EditorPrefID? id = null)
         {
             if (!HasEditorPref(key, id)) return defaultValue;
 
@@ -334,7 +334,7 @@ namespace SETB
         /// <param name="key">The EditorPref's key (aka their "name").</param>
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         #endregion
-        public static void DeleteEditorPref(string key, EditorPrefID id = null)
+        public static void DeleteEditorPref(string key, EditorPrefID? id = null)
         {
             if (!HasEditorPref(key, id)) return;
 
@@ -350,9 +350,6 @@ namespace SETB
 
         public static void DeleteEditorPrefBy(EditorPrefID filter)
         {
-            if (filter == null) return;
-
-
             WithTrackedEditorPrefs((string[] keys) =>
             {
                 List<string> remaining = new List<string>();
@@ -451,8 +448,8 @@ namespace SETB
         /// <param name="key">The string to be localized.</param>
         /// <returns>Returns the localized string.</returns>
         #endregion
-        public static string GetEditorPrefID(string key, EditorPrefID id = null)
-            => id == null ? key : (id.localized ? guidPrefix : "") + (id.ToString() + "_" ?? "") + key;
+        public static string GetEditorPrefID(string key, EditorPrefID? id = null)
+            => id == null ? key : (id.Value.localized ? guidPrefix : "") + (id.ToString() + "_" ?? "") + key;
 
 
         #region Helpers
@@ -495,9 +492,6 @@ namespace SETB
 
         private static bool EditorPrefKeyMatchesFilter(string fullKey, EditorPrefID filter)
         {
-            if (filter == null) return true;
-
-
             string key = fullKey;
 
             if (key.StartsWith(guidPrefix)) key = key.Substring(guidPrefix.Length);
@@ -724,7 +718,7 @@ namespace SETB
 
 
     #region Custom Classes
-    public class EditorPrefID
+    public struct EditorPrefID
     {
         public const string ANY = "*";
 
@@ -743,6 +737,14 @@ namespace SETB
             this.tag = tag ?? "Unknown";
 
             this.localized = localized;
+        }
+        public EditorPrefID(EditorPrefID other)
+        {
+            this.owner = other.owner ?? "Unknown";
+            this.ns = other.ns ?? "Unknown";
+            this.tag = other.tag ?? "Unknown";
+
+            this.localized = other.localized;
         }
 
         public static EditorPrefID Any(string owner = ANY, string ns = ANY, string tag = ANY) => new EditorPrefID(owner, ns, tag);
