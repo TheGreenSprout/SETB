@@ -350,6 +350,9 @@ namespace SETB
 
         public static void DeleteEditorPrefBy(EditorPrefID filter)
         {
+            if (filter == null) return;
+
+
             WithTrackedEditorPrefs((string[] keys) =>
             {
                 List<string> remaining = new List<string>();
@@ -362,6 +365,58 @@ namespace SETB
 
 
                 return remaining.Count > 0 ? string.Join(";", remaining) + ";" : "";
+            }, true);
+        }
+
+        public static void MoveAndDeleteEditorPrefs(EditorPrefID from, EditorPrefID to)
+        {
+            WithTrackedEditorPrefs((List<string> keys) =>
+            {
+                List<string> updatedKeys = new List<string>();
+
+                foreach (var fullKey in keys)
+                {
+                    if (!EditorPrefKeyMatchesFilter(fullKey, from))
+                    {
+                        updatedKeys.Add(fullKey);
+                        continue;
+                    }
+
+                    string workingKey = fullKey;
+                    if (workingKey.StartsWith(guidPrefix)) workingKey = workingKey.Substring(guidPrefix.Length);
+
+                    string prefix = from.ToString() + "_";
+                    int prefixIndex = workingKey.IndexOf(prefix);
+
+                    if (prefixIndex < 0)
+                    {
+                        updatedKeys.Add(fullKey);
+                        continue;
+                    }
+
+                    string actualKey = workingKey.Substring(prefixIndex + prefix.Length);
+
+                    
+                    string newKey = GetEditorPrefID(actualKey, to);
+
+                    if (EditorPrefs.HasKey(fullKey))
+                    {
+                        string value = EditorPrefs.GetString(fullKey, null);
+
+                        if (value != null) EditorPrefs.SetString(newKey, value);
+                        else
+                        {
+                            if (EditorPrefs.GetInt(fullKey, int.MinValue) != int.MinValue) EditorPrefs.SetInt(newKey, EditorPrefs.GetInt(fullKey));
+                            else if (EditorPrefs.GetFloat(fullKey, float.MinValue) != float.MinValue) EditorPrefs.SetFloat(newKey, EditorPrefs.GetFloat(fullKey));
+                            else if (EditorPrefs.GetBool(fullKey, false) || EditorPrefs.GetBool(fullKey, true)) EditorPrefs.SetBool(newKey, EditorPrefs.GetBool(fullKey));
+                        }
+
+                        EditorPrefs.DeleteKey(fullKey);
+                        updatedKeys.Add(newKey);
+                    }
+                }
+
+                return updatedKeys.Count > 0 ? string.Join(";", updatedKeys) + ";" : "";
             }, true);
         }
 
