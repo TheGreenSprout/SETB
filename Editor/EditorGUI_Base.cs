@@ -77,6 +77,7 @@ namespace SETB
             else EditorGUILayout.BeginHorizontal(style, options);
         }
         public static void EndHorizontal() => EditorGUILayout.EndHorizontal();
+
         #region XML doc
         /// <summary>
         /// Creates a vertical area.
@@ -97,6 +98,31 @@ namespace SETB
             else EditorGUILayout.BeginVertical(style, options);
         }
         public static void EndVertical() => EditorGUILayout.EndVertical();
+
+
+        public static void Center(Action logic) => Horizontal(() => CenterVertical(() => logic?.Invoke()));
+        public static void CenterHorizontal(Action logic)
+        {
+            Horizontal(() =>
+            {
+                FlexibleSpace();
+
+                logic?.Invoke();
+
+                FlexibleSpace();
+            });
+        }
+        public static void CenterVertical(Action logic)
+        {
+            Vertical(() =>
+            {
+                FlexibleSpace();
+
+                logic?.Invoke();
+
+                FlexibleSpace();
+            });
+        }
 
 
         #region XML doc
@@ -129,6 +155,13 @@ namespace SETB
 
 
 
+        #region General Display
+        public static void DrawImage(Texture2D image, GUIStyle style = null, params GUILayoutOption[] options)
+            => GUILayout.Label(image, style ?? GUIStyle.none, options);
+        #endregion
+
+
+
         #region Text Display
         #region XML doc
         /// <summary>
@@ -149,17 +182,9 @@ namespace SETB
         /// <param name="options">The label's GUILayoutOptions.</param>
         #endregion
         public static void DrawLabel(string text, GUIStyle style = null, params GUILayoutOption[] options)
-        {
-            if (style == null) style = EditorStyles.label;
-
-            EditorGUILayout.LabelField(text, style, options);
-        }
+            => EditorGUILayout.LabelField(text, style ?? EditorStyles.label, options);
         public static void DrawLabel(string text, string text2, GUIStyle style = null, params GUILayoutOption[] options)
-        {
-            if (style == null) style = EditorStyles.label;
-
-            EditorGUILayout.LabelField(text, text2, style, options);
-        }
+            => EditorGUILayout.LabelField(text, text2, style ?? EditorStyles.label, options);
 
         #region XML doc
         /// <summary>
@@ -170,11 +195,7 @@ namespace SETB
         /// <param name="options">The label's GUILayoutOptions.</param>
         #endregion
         public static void DrawSelectableLabel(string text, GUIStyle style = null, params GUILayoutOption[] options)
-        {
-            if (style == null) style = EditorStyles.label;
-
-            EditorGUILayout.SelectableLabel(text, style, options);
-        }
+            => EditorGUILayout.SelectableLabel(text, style ?? EditorStyles.label, options);
 
 
         #region XML doc

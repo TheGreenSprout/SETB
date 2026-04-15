@@ -8,6 +8,8 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
+using static SETB.EditorGUI_Base;
+
 namespace SETB
 {
     public static class HandyEditorFunctions
@@ -180,7 +182,7 @@ namespace SETB
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         /// <returns>Returns whether the EditorPref exists.</returns>
         #endregion
-        public static bool HasEditorPref(string key, bool localized = true, string tag = null) => EditorPrefs.HasKey(localized ? LocalizeString(key, tag) : key);
+        public static bool HasEditorPref(string key, EditorPrefID id = null) => EditorPrefs.HasKey(GetEditorPrefID(key, id));
 
 
         #region XML doc
@@ -191,14 +193,11 @@ namespace SETB
         #endregion
         public static void TrackKey(string key)
         {
-            string keyListKey = LocalizeString("EditorPrefsKeys");
-            string allKeys = EditorPrefs.GetString(keyListKey, "");
-
-            if (!allKeys.Contains(key))
+            WithTrackedEditorPrefs((string[] allKeys) =>
             {
-                allKeys += key + ";";
-                EditorPrefs.SetString(keyListKey, allKeys);
-            }
+                if (!allKeys.Contains(key)) return allKeys.Length > 0 ? string.Join(";", allKeys) + ";" + key + ";" : key + ";";
+                else return null;
+            });
         }
 
         #region XML doc
@@ -209,16 +208,11 @@ namespace SETB
         #endregion
         public static void DeTrackKey(string key)
         {
-            string keyListKey = LocalizeString("EditorPrefsKeys");
-
-            string allKeys = EditorPrefs.GetString(keyListKey, "");
-            var keys = allKeys.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ToList();
-
-            if (keys.Remove(key))
+            WithTrackedEditorPrefs((List<string> keys) =>
             {
-                string updated = string.Join(";", keys) + (keys.Count > 0 ? ";" : "");
-                EditorPrefs.SetString(keyListKey, updated);
-            }
+                if (keys.Remove(key)) return string.Join(";", keys) + (keys.Count > 0 ? ";" : "");
+                else return null;
+            });
         }
 
 
@@ -230,16 +224,13 @@ namespace SETB
         /// <param name="value">The value to save.</param>
         /// <param name="localized">Whether the key is to be localized.</param>
         #endregion
-        public static void SetEditorPref<T>(string key, T value, bool localized = true, string tag = null)
+        public static void SetEditorPref<T>(string key, T value, EditorPrefID id = null)
         {
             string newKey;
-            if (localized)
-            {
-                newKey = LocalizeString(key, tag);
+            newKey = GetEditorPrefID(key, id);
 
-                TrackKey(newKey);
-            }
-            else newKey = key;
+            TrackKey(newKey);
+
 
             if (typeof(T) == typeof(string)) EditorPrefs.SetString(newKey, (string)(object)value);
             else if (typeof(T) == typeof(bool)) EditorPrefs.SetBool(newKey, (bool)(object)value);
@@ -247,20 +238,20 @@ namespace SETB
             else if (typeof(T) == typeof(float)) EditorPrefs.SetFloat(newKey, (float)(object)value);
             else if (typeof(T) == typeof(Vector2))
             {
-                SetEditorPref(newKey + "_x", ((Vector2)(object)value).x, false);
-                SetEditorPref(newKey + "_y", ((Vector2)(object)value).y, false);
+                SetEditorPref(newKey + "_x", ((Vector2)(object)value).x, null);
+                SetEditorPref(newKey + "_y", ((Vector2)(object)value).y, null);
             }
             else if (typeof(T) == typeof(Vector3))
             {
-                SetEditorPref(newKey + "_x", ((Vector3)(object)value).x, false);
-                SetEditorPref(newKey + "_y", ((Vector3)(object)value).y, false);
-                SetEditorPref(newKey + "_z", ((Vector3)(object)value).z, false);
+                SetEditorPref(newKey + "_x", ((Vector3)(object)value).x, null);
+                SetEditorPref(newKey + "_y", ((Vector3)(object)value).y, null);
+                SetEditorPref(newKey + "_z", ((Vector3)(object)value).z, null);
             }
             else if (typeof(T) == typeof(Color))
             {
                 string hex = ColorUtility.ToHtmlStringRGBA((Color)(object)value);
 
-                SetEditorPref(newKey, hex, false);
+                SetEditorPref(newKey, hex, null);
             }
             else if (typeof(T).IsEnum) EditorPrefs.SetString(newKey, value.ToString());
             else if (!typeof(T).IsSerializable)
@@ -285,12 +276,12 @@ namespace SETB
         /// <param name="defaultValue">The default value of this EditorPref.</param>
         /// <returns>Returns the value of the EditorPref.</returns>
         #endregion
-        public static T GetEditorPref<T>(string key, T defaultValue = default, bool localized = true, string tag = null)
+        public static T GetEditorPref<T>(string key, T defaultValue = default, EditorPrefID id = null)
         {
-            if (!HasEditorPref(key, localized, tag)) return defaultValue;
+            if (!HasEditorPref(key, id)) return defaultValue;
 
 
-            string newKey = localized ? LocalizeString(key, tag) : key;
+            string newKey = GetEditorPrefID(key, id);
 
             if (typeof(T) == typeof(string)) return (T)(object)EditorPrefs.GetString(newKey, (string)(object)defaultValue);
             else if (typeof(T) == typeof(bool)) return (T)(object)EditorPrefs.GetBool(newKey, (bool)(object)defaultValue);
@@ -298,15 +289,15 @@ namespace SETB
             else if (typeof(T) == typeof(float)) return (T)(object)EditorPrefs.GetFloat(newKey, (float)(object)defaultValue);
             else if (typeof(T) == typeof(Vector2))
             {
-                float x = GetEditorPref(newKey + "_x", ((Vector2)(object)defaultValue).x, false);
-                float y = GetEditorPref(newKey + "_y", ((Vector2)(object)defaultValue).y, false);
+                float x = GetEditorPref(newKey + "_x", ((Vector2)(object)defaultValue).x, null);
+                float y = GetEditorPref(newKey + "_y", ((Vector2)(object)defaultValue).y, null);
                 return (T)(object)new Vector2(x, y);
             }
             else if (typeof(T) == typeof(Vector3))
             {
-                float x = GetEditorPref(newKey + "_x", ((Vector3)(object)defaultValue).x, false);
-                float y = GetEditorPref(newKey + "_y", ((Vector3)(object)defaultValue).y, false);
-                float z = GetEditorPref(newKey + "_z", ((Vector3)(object)defaultValue).z, false);
+                float x = GetEditorPref(newKey + "_x", ((Vector3)(object)defaultValue).x, null);
+                float y = GetEditorPref(newKey + "_y", ((Vector3)(object)defaultValue).y, null);
+                float z = GetEditorPref(newKey + "_z", ((Vector3)(object)defaultValue).z, null);
                 return (T)(object)new Vector3(x, y, z);
             }
             else if (typeof(T) == typeof(Color))
@@ -343,22 +334,37 @@ namespace SETB
         /// <param name="key">The EditorPref's key (aka their "name").</param>
         /// <param name="localized">Whether the key was localized when saving the EditorPref.</param>
         #endregion
-        public static void DeleteEditorPref(string key, bool localized = true, string tag = null)
+        public static void DeleteEditorPref(string key, EditorPrefID id = null)
         {
-            if (!HasEditorPref(key, localized, tag)) return;
+            if (!HasEditorPref(key, id)) return;
 
 
             string newKey;
-            if (localized)
-            {
-                newKey = LocalizeString(key, tag);
+            newKey = GetEditorPrefID(key, id);
 
-                DeTrackKey(newKey);
-            }
-            else newKey = key;
+            DeTrackKey(newKey);
+
 
             EditorPrefs.DeleteKey(newKey);
         }
+
+        public static void DeleteEditorPrefBy(EditorPrefID filter)
+        {
+            WithTrackedEditorPrefs((string[] keys) =>
+            {
+                List<string> remaining = new List<string>();
+
+                foreach (var fullKey in keys)
+                {
+                    if (EditorPrefKeyMatchesFilter(fullKey, filter)) EditorPrefs.DeleteKey(fullKey);
+                    else remaining.Add(fullKey);
+                }
+
+
+                return remaining.Count > 0 ? string.Join(";", remaining) + ";" : "";
+            }, true);
+        }
+
 
         #region XML doc
         /// <summary>
@@ -367,21 +373,22 @@ namespace SETB
         #endregion
         public static void ClearAllTrackedEditorPrefs()
         {
-            string keyListKey = LocalizeString("EditorPrefsKeys");
-
-            string allKeys = EditorPrefs.GetString(keyListKey, "");
-            string[] keys = allKeys.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries);
-
-            foreach (string key in keys)
+            string keyListKey = WithTrackedEditorPrefs((string[] keys) =>
             {
-                if (HasEditorPref(key, false)) EditorPrefs.DeleteKey(key);
-            }
+                foreach (string key in keys)
+                {
+                    if (HasEditorPref(key, null)) EditorPrefs.DeleteKey(key);
+                }
+
+                return null;
+            });
 
 
             EditorPrefs.DeleteKey(keyListKey);
         }
 
 
+        public static string guidPrefix => GetProjectGUID() + "_";
         #region XML doc
         /// <summary>
         /// Turns a string into a "local" version of itself (for the project).
@@ -389,7 +396,74 @@ namespace SETB
         /// <param name="key">The string to be localized.</param>
         /// <returns>Returns the localized string.</returns>
         #endregion
-        public static string LocalizeString(string key, string tag = null) => GetProjectGUID() + "_" + (String.IsNullOrEmpty(tag) ? "" : tag + "_") + key;
+        public static string GetEditorPrefID(string key, EditorPrefID id = null)
+            => id == null ? key : (id.localized ? guidPrefix : "") + (id.ToString() + "_" ?? "") + key;
+
+
+        #region Helpers
+        private static void SetRawEditorPref(string key, string value) => EditorPrefs.SetString(key, value);
+
+        private static string trackedKeys_key => GetProjectGUID() + "__EDITOR_PREFS_TRACKED_KEYS__";
+        private static string WithTrackedEditorPrefs(Func<string, string> logic, bool mustWrite = false)
+        {
+            string allKeys = EditorPrefs.GetString(trackedKeys_key, "");
+
+            string newKeys = logic.Invoke(allKeys);
+
+            if (mustWrite || (!string.IsNullOrWhiteSpace(newKeys) && allKeys != newKeys)) SetRawEditorPref(trackedKeys_key, newKeys);
+
+
+            return trackedKeys_key;
+        }
+        private static string WithTrackedEditorPrefs(Func<string[], string> logic, bool mustWrite = false)
+        {
+            string allKeys = EditorPrefs.GetString(trackedKeys_key, "");
+
+            string newKeys = logic.Invoke(allKeys.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries));
+
+            if (mustWrite || (!string.IsNullOrWhiteSpace(newKeys) && allKeys != newKeys)) SetRawEditorPref(trackedKeys_key, newKeys);
+
+
+            return trackedKeys_key;
+        }
+        private static string WithTrackedEditorPrefs(Func<List<string>, string> logic, bool mustWrite = false)
+        {
+            string allKeys = EditorPrefs.GetString(trackedKeys_key, "");
+
+            string newKeys = logic.Invoke(allKeys.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries).ToList());
+
+            if (mustWrite || (!string.IsNullOrWhiteSpace(newKeys) && allKeys != newKeys)) SetRawEditorPref(trackedKeys_key, newKeys);
+
+
+            return trackedKeys_key;
+        }
+
+        private static bool EditorPrefKeyMatchesFilter(string fullKey, EditorPrefID filter)
+        {
+            if (filter == null) return true;
+
+
+            string key = fullKey;
+
+            if (key.StartsWith(guidPrefix)) key = key.Substring(guidPrefix.Length);
+
+            var parts = key.Split('_');
+            if (parts.Length < 4) return false;
+
+
+            string owner = parts[0];
+            string ns = parts[1];
+            string tag = parts[2];
+
+            if (!IsMatch(filter.owner, owner)) return false;
+            if (!IsMatch(filter.ns, ns)) return false;
+            if (!IsMatch(filter.tag, tag)) return false;
+
+
+            return true;
+        }
+        public static bool IsMatch(string filter, string value) => filter != null && (filter == EditorPrefID.ANY || filter == value);
+        #endregion
         #endregion
 
     
@@ -404,14 +478,14 @@ namespace SETB
         /// <param name="height">The height of the popup.</param>
         /// <param name="options">The PopupOptions of this popup.</param>
         #endregion
-        public static BasicPopup PopupWindow(string message, float width, float height, PopupOptions options)
+        public static BasicPopup PopupWindow(string message, float width = 250, float height = 100, PopupOptions options = null)
         {
             if (options == null) options = new PopupOptions();
 
 
             BasicPopup popup = ScriptableObject.CreateInstance<BasicPopup>();
 
-            popup.CreatePopup(message, width, height, options.Title, options.CloseButtonText, options.Sound, options.Silent, options.Image, options.ImageWidth, options.ImageHeight, options.Centered, options.Locked);
+            popup.CreatePopup(message, width, height, options);
             
             return popup;
         }
@@ -570,17 +644,67 @@ namespace SETB
         public static void UtilitySetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
         public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
         #endregion
+    
+    
+
+        
+        #region Quick Tools
+        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/ClearEditorPrefs")]
+        private static void ClearEditorPrefs()
+            => PopupWindow("Are you sure? This will delete ALL EditorPrefs (not only from this project).",
+                            250,
+                            100,
+                            new PopupOptions{CloseButtonLogic = EditorPrefs.DeleteAll, CloseButtonText = "YES"});
+
+        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/ClearTrackedEditorPrefs")]
+        private static void ClearTrackedEditorPrefs()
+            => PopupWindow("Are you sure? This will delete ALL currently tracked EditorPrefs (in this project).",
+                            250,
+                            100,
+                            new PopupOptions{CloseButtonLogic = ClearAllTrackedEditorPrefs, CloseButtonText = "YES"});
+        #endregion
     }
 
 
 
 
     #region Custom Classes
+    public class EditorPrefID
+    {
+        public const string ANY = "*";
+
+
+        public string owner { get; private set; }
+        public string ns { get; private set; }
+        public string tag { get; private set; }
+
+        public bool localized { get; private set; }
+
+
+        public EditorPrefID(string owner = null, string ns = null, string tag = null, bool localized = true)
+        {
+            this.owner = owner ?? "Unknown";
+            this.ns = ns ?? "Unknown";
+            this.tag = tag ?? "Unknown";
+
+            this.localized = localized;
+        }
+
+        public static EditorPrefID Any(string owner = ANY, string ns = ANY, string tag = ANY) => new EditorPrefID(owner, ns, tag);
+
+
+        public override string ToString() => $"{owner}_{ns}_{tag}";
+    }
+
+
+
+    #region Popup
     public class PopupOptions
     {
-        public string Title { get; set; } = "PopUp";
+        public string Title { get; set; } = "Popup";
 
         public string CloseButtonText { get; set; } = "OK";
+        public Action CloseButtonLogic { get; set; } = null;
 
 
         public AudioClip Sound { get; set; } = null;
@@ -601,84 +725,79 @@ namespace SETB
 
     public class BasicPopup : EditorWindow_Base<BasicPopup>
     {
+        #region Variables
         private string message;
 
-        private string closeButtonText;
-
-
-        private AudioClip sound;
-
-        private Texture2D image;
+        private PopupOptions popupOptions;
 
 
         private float windowWidth;
         //private float windowHeight;
-
-        private float imageWidth;
-        private float imageHeight;
+        #endregion
 
 
 
-        public void CreatePopup(string m, float width, float height, string title = "PopUp", string c = "OK", AudioClip s = null, bool silentWindow = false, Texture2D i = null, float w = 64, float h = 64, bool centered = true, bool locked = true)
+
+        #region Creation
+        public void CreatePopup(string m, float width, float height, PopupOptions options = null)
         {
             message = m;
+            popupOptions = options ?? new PopupOptions();
+
             windowWidth = width;
             //windowHeight = height;
-            closeButtonText = c;
-            sound = s;
-            image = i;
-            imageWidth = w;
-            imageHeight = h;
 
 
-            CreateWindow(title, true, centered, locked, width, height, width, height);
+            CreateWindow(popupOptions.Title, true, popupOptions.Centered, popupOptions.Locked, width, height, width, height);
 
 
-            if (!silentWindow)
-            {
-                HandyEditorFunctions.TryPlaySound(sound);
-            }
+            if (!popupOptions.Silent) HandyEditorFunctions.TryPlaySound(popupOptions.Sound);
         }
+        #endregion
 
 
+
+        #region Main
         protected void OnGUI()
         {
-            GUILayout.Space(20);
-
-
-            if (image != null)
-            {
-                GUILayout.BeginHorizontal();
-                GUILayout.FlexibleSpace();
-
-                GUILayout.Label(image, GUILayout.Width(imageWidth), GUILayout.Height(imageHeight));
-
-                GUILayout.FlexibleSpace();
-                GUILayout.EndHorizontal();
-            }
-
-
-            GUILayout.Space(10);
-
-            GUILayout.BeginHorizontal();
-            GUILayout.FlexibleSpace();
-            GUILayout.Label(
-                message,
-                new GUIStyle(EditorStyles.wordWrappedLabel) { alignment = TextAnchor.MiddleCenter },
-                GUILayout.Width(windowWidth)
-            );
-            GUILayout.FlexibleSpace();
-            GUILayout.EndHorizontal();
-
-
-            GUILayout.FlexibleSpace();
-
-            if (GUILayout.Button(closeButtonText))
+            if (popupOptions == null || message == null)
             {
                 Close();
+                return;
             }
+
+
+            Space(10);
+
+
+            if (popupOptions.Image != null)
+            {
+                Space(10);
+
+                Horizontal(() => CenterHorizontal(() => DrawImage(popupOptions.Image,
+                                                                    null,
+                                                                    GUILayout.Width(popupOptions.ImageWidth),
+                                                                    GUILayout.Height(popupOptions.ImageHeight))));
+
+                Space(10);
+            }
+
+
+            Center(() => DrawLabel(message, new GUIStyle(EditorStyles.wordWrappedLabel) { alignment = TextAnchor.MiddleCenter }, GUILayout.Width(windowWidth)));
+
+
+            FlexibleSpace();
+
+            DrawButton(popupOptions.CloseButtonText, () => {
+                if (popupOptions == null) return;
+
+                popupOptions.CloseButtonLogic?.Invoke();
+                Close();
+            });
         }
+        #endregion
     }
+    #endregion
     #endregion
 
 

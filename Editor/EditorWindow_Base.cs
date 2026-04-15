@@ -61,6 +61,10 @@ namespace SETB
         protected static void CreateWindow(string windowName, bool utility = false, bool centered = false, bool locked = false, float minWidth = 0, float minHeight = 0, float maxWidth = 0, float maxHeight = 0)
         {
             var window = GetWindow<T>(windowName, utility);
+            window.titleContent = new GUIContent(windowName);
+
+            if (maxWidth == minWidth) maxWidth++;
+            if (maxHeight == minHeight) maxHeight++;
 
             if (minWidth > 0 && minHeight > 0) window.minSize = new Vector2(minWidth, minHeight);
             if (maxWidth > 0 && maxHeight > 0 && maxWidth >= minWidth && maxHeight >= minHeight) window.maxSize = new Vector2(maxWidth, maxHeight);

@@ -20,7 +20,7 @@ public class EditorWindow_Test : EditorWindow_Base<EditorWindow_Test>
 
 
 
-    [MenuItem("Tools/SETB/Test Tool")]
+    [MenuItem("Tools/Sprout's Editor Tool Base/Samples/ExampleTools/Test Tool")]
     public static void ShowWindow() => CreateWindow("Test Tool", centeredWindow);
 
 
