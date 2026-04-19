@@ -1,8 +1,10 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 using System.IO;
 using UnityEditor.ProjectWindowCallback;
-using UnityEngine.UI;
+
+using static SETB.EditorHelpers;
 
 namespace SETB.CustomTemplates
 {
@@ -33,16 +35,15 @@ namespace SETB.CustomTemplates
 
         private static string LoadTemplate(string templateName)
         {
-            string packagePath = $"Packages/com.sproutinggames.sprouts.etb/Editor/CustomTemplates/Resources/SETB_Templates/{templateName}.txt";
-            var templateAsset = AssetDatabase.LoadAssetAtPath<TextAsset>(packagePath);
+            var assets = GetAllAssets<TextAsset>(templateName);
+            if (assets == null || assets.Count == 0 || assets[0] == null)
+            {
+                Debug.LogError($"Template not found: {templateName}");
 
-            if (templateAsset != null) return templateAsset.text;
+                return null;
+            }
 
-            var resourceAsset = Resources.Load<TextAsset>("SETB_Templates/" + templateName);
-            if (resourceAsset != null) return resourceAsset.text;
-
-            Debug.LogError($"Template not found: {templateName}");
-            return null;
+            return assets[0].text;
         }
 
         private static string GetSelectedPathOrFallback()
@@ -179,3 +180,4 @@ namespace SETB.CustomTemplates
     }
     #endregion
 }
+#endif

@@ -2,6 +2,7 @@ using UnityEditor;
 using UnityEngine;
 
 using SETB;
+using SETB.SuperClasses;
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 

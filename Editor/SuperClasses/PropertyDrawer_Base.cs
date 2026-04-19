@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using UnityEditor;
@@ -5,7 +6,7 @@ using UnityEngine;
 
 using static SETB.HandyEditorFunctions;
 
-namespace SETB
+namespace SETB.SuperClasses
 {
     public abstract class PropertyDrawer_Base<T> : PropertyDrawer where T : PropertyDrawer_Base<T>
     {
@@ -590,3 +591,4 @@ namespace SETB
         #endregion
     }
 }
+#endif

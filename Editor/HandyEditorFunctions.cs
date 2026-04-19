@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,6 +9,7 @@ using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
 
+using SETB.SuperClasses;
 using static SETB.EditorGUI_Base;
 
 namespace SETB
@@ -879,3 +881,4 @@ namespace SETB
     }
     #endregion
 }
+#endif

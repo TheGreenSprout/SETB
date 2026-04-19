@@ -1,7 +1,8 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
-using SETB;
+using SETB.SuperClasses;
 using static SETB.HandyEditorFunctions;
 
 #NAMESPACE_START#
@@ -15,3 +16,4 @@ public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
     }
 }
 #NAMESPACE_END#
+#endif

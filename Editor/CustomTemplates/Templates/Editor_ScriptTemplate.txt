@@ -1,7 +1,8 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
-using SETB;
+using SETB.SuperClasses;
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
@@ -17,3 +18,4 @@ public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
     }
 }
 #NAMESPACE_END#
+#endif

@@ -1,91 +1,43 @@
+#if UNITY_EDITOR
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
-using System.Collections.Generic;
 
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
-namespace SETB
+namespace SETB.SuperClasses
 {
-    #region XML doc
-    /// <summary>
-    /// Class containing all the basics (and no so basics) for making editor tools.
-    /// </summary>
-    #endregion
-    public abstract class EditorWindow_Base<T> : EditorWindow where T : EditorWindow_Base<T>
+    public abstract class Editor_Base<T> : Editor where T : Editor_Base<T>
     {
         #region Variables
-        private Rect? originalRect = null;
-
-
         private string cacheSaveStr = "";
         private Dictionary<string, float> cacheScoreDictionary = new();
         #endregion
 
 
 
+
         #region Unity Methods
         protected virtual void OnEnable() => this.Load_AttributeEditorPrefs();
         
-
         protected virtual void OnDisable() => this.Save_AttributeEditorPrefs();
+
+
+        public override void OnInspectorGUI()
+        {
+            serializedObject.Update();
+
+            DrawInspector();
+
+            serializedObject.ApplyModifiedProperties();
+        }
+
+        protected virtual void DrawInspector() => DrawDefaultInspector();
+        #endregion
+    
         
-
-
-        protected virtual void Update()
-        {
-            if (originalRect.HasValue && position.position != originalRect.Value.position)
-            {
-                position = new Rect(originalRect.Value.position, position.size);
-
-                Repaint();
-            }
-        }
-        #endregion
-
-
-
-        #region Creation
-        #region XML doc
-        /// <summary>
-        /// Instantiates a normal Unity Editor window.
-        /// </summary>
-        /// <param name="windowName">The name of the window.</param>
-        /// <param name="centered">Whether the window is center when first appearing.</param>
-        /// <param name="locked">Whether the window is locked in place (can't be moved).</param>
-        /// <param name="minWidth">The minimmum width of the window.</param>
-        /// <param name="minHeight">The minimmum height of the window.</param>
-        /// <param name="maxWidth">The maximmum width of the window (if equal to minWidth, the user won't be able to chage the window width).</param>
-        /// <param name="maxHeight">The maximmum height of the window (if equal to minHeight, the user won't be able to chage the window height).</param>
-        #endregion
-        protected static void CreateWindow(string windowName, bool utility = false, bool centered = false, bool locked = false, float minWidth = 0, float minHeight = 0, float maxWidth = 0, float maxHeight = 0)
-        {
-            var window = GetWindow<T>(windowName, utility);
-            window.titleContent = new GUIContent(windowName);
-
-            if (maxWidth == minWidth) maxWidth++;
-            if (maxHeight == minHeight) maxHeight++;
-
-            if (minWidth > 0 && minHeight > 0) window.minSize = new Vector2(minWidth, minHeight);
-            if (maxWidth > 0 && maxHeight > 0 && maxWidth >= minWidth && maxHeight >= minHeight) window.maxSize = new Vector2(maxWidth, maxHeight);
-
-            window.Show();
-
-
-            if (centered) window.position = CenterWindow(window.position.width, window.position.height);
-
-            if (locked)
-            {
-                EditorApplication.delayCall += () =>
-                {
-                    if (window != null && window is EditorWindow_Base<T> baseWindow) baseWindow.originalRect = window.position;
-                };
-            }
-        }
-        #endregion
-
-
-
+        
         #region Proxy
         #region XML doc
         /// <summary>
@@ -100,7 +52,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, null, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -116,7 +68,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, null, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -132,7 +84,7 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref scrollVector, null, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref scrollVector, target, delayedSearch, styles, options);
         
         #region XML doc
         /// <summary>
@@ -149,44 +101,21 @@ namespace SETB
         /// <param name="options">The list's GUILayoutOptions list.</param>
         #endregion
         public void DrawSearchableList<E>(string label, string searchLabel, ref E items, ref string searchStr, ref bool foldoutBool, ref Vector2 scrollVector, bool delayedSearch = false, List_GUIStyles styles = null, List_GUILayoutOptions options = null)
-            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, null, delayedSearch, styles, options);
+            => _DrawSearchableList(ref cacheSaveStr, cacheScoreDictionary, label, searchLabel, ref items, ref searchStr, ref foldoutBool, ref scrollVector, target, delayedSearch, styles, options);
         
-        
-        protected SerializedProperty Prop(SerializedObject obj, string name) => FindProperty(obj, name);
+            
+        protected SerializedProperty Prop(string name) => FindProperty(serializedObject, name);
+        protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name);
 
         protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath) => FindPropertyRelative(prop, relativePath);
+
+
+        protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
         #endregion
 
 
 
         #region Misc
-        #region XML doc
-        /// <summary>
-        /// Retrieves the rect position of the main editor window.
-        /// </summary>
-        /// <returns>Returns the Rect of the window.</returns>
-        #endregion
-        private static Rect GetEditorMainWindowPos() => EditorGUIUtility.GetMainWindowPosition();
-
-        #region XML doc
-        /// <summary>
-        /// Centers a window on screen.
-        /// </summary>
-        /// <param name="width">The current width of the window.</param>
-        /// <param name="height">The current height of the window.</param>
-        /// <returns>Returns the new Rect position of the window.</returns>
-        #endregion
-        private static Rect CenterWindow(float width, float height)
-        {
-            Rect main = GetEditorMainWindowPos();
-
-            float x = main.x + (main.width - width) * 0.5f;
-            float y = main.y + (main.height - height) * 0.5f;
-
-            return new Rect(x, y, width, height);
-        }
-
-
         protected void Validate(bool condition, string message, MessageType type = MessageType.Warning)
         {
             if (!condition) EditorGUILayout.HelpBox(message, type);
@@ -194,3 +123,4 @@ namespace SETB
         #endregion
     }
 }
+#endif

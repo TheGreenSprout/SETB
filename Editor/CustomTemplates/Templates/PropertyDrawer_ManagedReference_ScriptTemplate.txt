@@ -1,7 +1,8 @@
+#if UNITY_EDITOR
 using UnityEngine;
 using UnityEditor;
 
-using SETB;
+using SETB.SuperClasses;
 using static SETB.HandyEditorFunctions;
 
 #NAMESPACE_START#
@@ -31,3 +32,4 @@ public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
         => DrawManagedReferenceDropdown(property, "Gradient Type", types, typeNames);
 }
 #NAMESPACE_END#
+#endif
