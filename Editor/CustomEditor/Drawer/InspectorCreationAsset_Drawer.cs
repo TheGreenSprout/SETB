@@ -7,7 +7,7 @@ using static SETB.EditorGUI_Base;
 
 namespace SETB._CustomEditor.Drawers
 {
-    [CustomEditor(typeof(InspectorCreationAssets))]
+    [CustomEditor(typeof(InspectorCreationAsset))]
     public class InspectorCreationAsset_Drawer : Editor_Base<InspectorCreationAsset_Drawer>
     {
         protected override void DrawInspector()
@@ -15,7 +15,7 @@ namespace SETB._CustomEditor.Drawers
             serializedObject.Update();
 
 
-            DrawButton("Generate Methods", () => ((InspectorCreationAssets)target).GenerateMethods());
+            DrawButton("Generate Methods", () => ((InspectorCreationAsset)target).GenerateMethods());
 
             Space(10f);
 

@@ -6,8 +6,8 @@ using SETB.InnerWorkings;
 
 namespace SETB._CustomEditor.ScriptableObjects
 {
-    [CreateAssetMenu(fileName = "InspectorCreationAssets", menuName = "SETB/Custom Editor/InspectorCreationAssets")]
-    public class InspectorCreationAssets : ScriptableObject
+    [CreateAssetMenu(fileName = "InspectorCreationAsset", menuName = "SETB/Custom Editor/InspectorCreationAsset")]
+    public class InspectorCreationAsset : ScriptableObject
     {
         [HideInInspector] public string lastName;
 

@@ -52,7 +52,7 @@ namespace SETB.InnerWorkings
 
 
         #region Logic
-        public static string GenerateMethods(InspectorCreationAssets obj, string lastName)
+        public static string GenerateMethods(InspectorCreationAsset obj, string lastName)
         {
             string key = instance?.Fetch(obj, lastName);
             if (key == null) return key;
@@ -64,7 +64,7 @@ namespace SETB.InnerWorkings
             return key;
         }
 
-        public string Fetch(InspectorCreationAssets obj, string lastName)
+        public string Fetch(InspectorCreationAsset obj, string lastName)
         {
             if (data == null) data = new();
 
