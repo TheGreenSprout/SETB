@@ -64,8 +64,8 @@ namespace SETB.SuperClasses
             var window = GetWindow<T>(windowName, utility);
             window.titleContent = new GUIContent(windowName);
 
-            if (maxWidth == minWidth) maxWidth++;
-            if (maxHeight == minHeight) maxHeight++;
+            if (maxWidth == minWidth && maxWidth > 0f) maxWidth++;
+            if (maxHeight == minHeight && maxWidth > 0f) maxHeight++;
 
             if (minWidth > 0 && minHeight > 0) window.minSize = new Vector2(minWidth, minHeight);
             if (maxWidth > 0 && maxHeight > 0 && maxWidth >= minWidth && maxHeight >= minHeight) window.maxSize = new Vector2(maxWidth, maxHeight);
