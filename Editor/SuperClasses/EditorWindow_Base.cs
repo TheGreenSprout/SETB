@@ -59,7 +59,7 @@ namespace SETB.SuperClasses
         /// <param name="maxWidth">The maximmum width of the window (if equal to minWidth, the user won't be able to chage the window width).</param>
         /// <param name="maxHeight">The maximmum height of the window (if equal to minHeight, the user won't be able to chage the window height).</param>
         #endregion
-        protected static void CreateWindow(string windowName, bool utility = false, bool centered = false, bool locked = false, float minWidth = 0, float minHeight = 0, float maxWidth = 0, float maxHeight = 0)
+        protected static T CreateWindow(string windowName, bool utility = false, bool centered = false, bool locked = false, float minWidth = 0, float minHeight = 0, float maxWidth = 0, float maxHeight = 0)
         {
             var window = GetWindow<T>(windowName, utility);
             window.titleContent = new GUIContent(windowName);
@@ -82,6 +82,9 @@ namespace SETB.SuperClasses
                     if (window != null && window is EditorWindow_Base<T> baseWindow) baseWindow.originalRect = window.position;
                 };
             }
+
+
+            return window;
         }
         #endregion
 
