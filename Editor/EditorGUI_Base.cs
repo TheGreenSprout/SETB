@@ -126,6 +126,7 @@ namespace SETB
         }
 
 
+        public static Rect GetRect(float width, float height) => GUILayoutUtility.GetRect(width, height);
         public static Rect GetRect(GUIContent content, GUIStyle style = null, params GUILayoutOption[] options) => GUILayoutUtility.GetRect(content, style, options);
         #region XML doc
         /// <summary>
