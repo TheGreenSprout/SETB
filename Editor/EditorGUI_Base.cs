@@ -126,6 +126,7 @@ namespace SETB
         }
 
 
+        public static Rect GetRect(GUIContent content, GUIStyle style = null, params GUILayoutOption[] options) => GUILayoutUtility.GetRect(content, style, options);
         #region XML doc
         /// <summary>
         /// Gets a rect for an Editor control.
@@ -134,6 +135,9 @@ namespace SETB
         /// <returns>Returns the rect.</returns>
         #endregion
         public static Rect GetControlRect(params GUILayoutOption[] options) => EditorGUILayout.GetControlRect(options);
+        public static Rect GetLastRect() => GUILayoutUtility.GetLastRect();
+
+        public static void DrawRect(Rect rect, Color color) => EditorGUI.DrawRect(rect, color);
 
 
         #region XML doc
@@ -334,7 +338,7 @@ namespace SETB
 
             else if (field is SerializedProperty sp)
             {
-                DrawInputProperty(label, sp, options);
+                DrawInputProperty(label, sp, true, options);
                 return (E)newValue;
             }
 
@@ -426,8 +430,8 @@ namespace SETB
         public static object DrawInputEnum(string label, object value, GUIStyle style = null, params GUILayoutOption[] options)
             => EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
 
-        public static bool DrawInputProperty(string label, SerializedProperty property, params GUILayoutOption[] options)
-            => EditorGUILayout.PropertyField(property, label == null ? null : new GUIContent(label), options);
+        public static bool DrawInputProperty(string label, SerializedProperty property, bool includeChildren = true, params GUILayoutOption[] options)
+            => EditorGUILayout.PropertyField(property, label == null ? null : new GUIContent(label), includeChildren, options);
 
         public static void DrawInputObject<T>(string label, ref T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object
         {
