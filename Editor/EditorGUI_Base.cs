@@ -419,25 +419,24 @@ namespace SETB
                         : EditorGUILayout.DoubleField(label, value, style ?? EditorStyles.numberField, options);
 
         public static void DrawInputEnum<T>(string label, ref T value, GUIStyle style = null, params GUILayoutOption[] options) where T : Enum
-        {
-            value = (T)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)value, style ?? EditorStyles.textField, options);
-        }
+            => value = (T)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)value, style ?? EditorStyles.textField, options);
         public static T DrawInputEnum<T>(string label, T value, GUIStyle style = null, params GUILayoutOption[] options) where T : Enum
             => (T)(object)EditorGUILayout.EnumFlagsField(label, (Enum)(object)value, style ?? EditorStyles.textField, options);
         public static void DrawInputEnum(string label, ref object value, GUIStyle style = null, params GUILayoutOption[] options)
-        {
-            value = EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
-        }
+            => value = EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
         public static object DrawInputEnum(string label, object value, GUIStyle style = null, params GUILayoutOption[] options)
             => EditorGUILayout.EnumFlagsField(label, (Enum)value, style ?? EditorStyles.textField, options);
+
+        public static void DrawInputMask(string label, ref int value, string[] displayedOptions, GUIStyle style = null, params GUILayoutOption[] options)
+            => value = DrawInputMask(label, value, displayedOptions, style, options);
+        public static int DrawInputMask(string label, int value, string[] displayedOptions, GUIStyle style = null, params GUILayoutOption[] options)
+            => EditorGUILayout.MaskField(new GUIContent(label), value, displayedOptions, style ?? EditorStyles.popup, options);
 
         public static bool DrawInputProperty(string label, SerializedProperty property, bool includeChildren = true, params GUILayoutOption[] options)
             => EditorGUILayout.PropertyField(property, label == null ? null : new GUIContent(label), includeChildren, options);
 
         public static void DrawInputObject<T>(string label, ref T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object
-        {
-            value = (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
-        }
+            => value = (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
         public static T DrawInputObject<T>(string label, T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object
             => (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
 
