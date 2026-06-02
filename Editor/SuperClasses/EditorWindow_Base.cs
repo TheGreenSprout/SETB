@@ -18,6 +18,8 @@ namespace SETB.SuperClasses
         #region Variables
         private Rect? originalRect = null;
 
+        private bool isLocked = false;
+
 
         private string cacheSaveStr = "";
         private Dictionary<string, float> cacheScoreDictionary = new();
@@ -25,16 +27,18 @@ namespace SETB.SuperClasses
 
 
 
-        #region Unity Methods
+
+        #region Main
         protected virtual void OnEnable() => this.Load_AttributeEditorPrefs();
         
-
         protected virtual void OnDisable() => this.Save_AttributeEditorPrefs();
+        protected virtual void OnDestroy() { }
         
-
 
         protected virtual void Update()
         {
+            if (!isLocked) return;
+
             if (originalRect.HasValue && position.position != originalRect.Value.position)
             {
                 position = new Rect(originalRect.Value.position, position.size);
@@ -42,11 +46,8 @@ namespace SETB.SuperClasses
                 Repaint();
             }
         }
-        #endregion
 
 
-
-        #region Creation
         #region XML doc
         /// <summary>
         /// Instantiates a normal Unity Editor window.
@@ -79,7 +80,11 @@ namespace SETB.SuperClasses
             {
                 EditorApplication.delayCall += () =>
                 {
-                    if (window != null && window is EditorWindow_Base<T> baseWindow) baseWindow.originalRect = window.position;
+                    if (window != null && window is EditorWindow_Base<T> baseWindow)
+                    {
+                        baseWindow.originalRect = window.position;
+                        baseWindow.isLocked = true;
+                    }
                 };
             }
 
@@ -188,12 +193,6 @@ namespace SETB.SuperClasses
             float y = main.y + (main.height - height) * 0.5f;
 
             return new Rect(x, y, width, height);
-        }
-
-
-        protected void Validate(bool condition, string message, MessageType type = MessageType.Warning)
-        {
-            if (!condition) EditorGUILayout.HelpBox(message, type);
         }
         #endregion
     }

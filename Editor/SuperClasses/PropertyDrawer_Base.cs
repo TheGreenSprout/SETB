@@ -54,22 +54,27 @@ namespace SETB.SuperClasses
 
         protected E GetState<E>(SerializedProperty property, string key, E defaultValue = default)
         {
-            if (stateCache.Count > 1000) stateCache.Clear();
-
-
             string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
             if (!stateCache.TryGetValue(fullKey, out var dict))
             {
-                dict = new Dictionary<string, object>();
+                if (stateCache.Count > 1000)
+                {
+                    int toRemove = 200;
+                    foreach (var k in stateCache.Keys)
+                    {
+                        stateCache.Remove(k);
+                        if (--toRemove <= 0) break;
+                    }
+                }
 
+                dict = new Dictionary<string, object>();
                 stateCache[fullKey] = dict;
             }
 
             if (!dict.TryGetValue(key, out var value))
             {
                 dict[key] = defaultValue;
-
                 return defaultValue;
             }
 
@@ -78,15 +83,21 @@ namespace SETB.SuperClasses
 
         protected void SetState<E>(SerializedProperty property, string key, E value)
         {
-            if (stateCache.Count > 1000) stateCache.Clear();
-
-
             string fullKey = property.serializedObject.targetObject.GetInstanceID() + "_" + property.propertyPath;
 
             if (!stateCache.TryGetValue(fullKey, out var dict))
             {
-                dict = new Dictionary<string, object>();
+                if (stateCache.Count > 1000)
+                {
+                    int toRemove = 200;
+                    foreach (var k in stateCache.Keys)
+                    {
+                        stateCache.Remove(k);
+                        if (--toRemove <= 0) break;
+                    }
+                }
 
+                dict = new Dictionary<string, object>();
                 stateCache[fullKey] = dict;
             }
 
@@ -103,7 +114,7 @@ namespace SETB.SuperClasses
 
 
 
-        #region Unity Methods
+        #region Main
         public override void OnGUI(Rect position, SerializedProperty property, GUIContent label)
         {
             EditorGUI.BeginProperty(position, label, property);
@@ -186,7 +197,7 @@ namespace SETB.SuperClasses
 
             protected void DrawHelpBox(string text, MessageType type, LayoutContext context = null)
             {
-                float h = singleLineHeight * 2f;
+                float h = EditorStyles.helpBox.CalcHeight(new GUIContent(text), EditorGUIUtility.currentViewWidth);
                 Rect r = ReserveSpace(h, context);
 
                 if (isDrawing) EditorGUI.HelpBox(r, text, type);
@@ -208,18 +219,11 @@ namespace SETB.SuperClasses
             {
                 Rect r = ReserveSpace(singleLineHeight, context);
 
+                bool expanded = isDrawing
+                    ? property.isExpanded = EditorGUI.Foldout(r, property.isExpanded, label ?? property.displayName, true, style ?? EditorStyles.foldout)
+                    : property.isExpanded;
 
-                if (isLayout) return;
-
-                property.isExpanded = EditorGUI.Foldout(
-                    r,
-                    property.isExpanded,
-                    label ?? property.displayName,
-                    true,
-                    style ?? EditorStyles.foldout
-                );
-
-                if (property.isExpanded) logic?.Invoke();
+                if (expanded) logic?.Invoke();
             }
 
 
@@ -484,8 +488,7 @@ namespace SETB.SuperClasses
         protected SerializedProperty Prop(SerializedObject obj, string name) => obj == null ? Prop(name) : FindProperty(obj, name);
 
         protected SerializedProperty PropRelative(string relativePath) => FindPropertyRelative(targetProperty, relativePath);
-        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath)
-            => prop == null ? PropRelative(relativePath) : FindPropertyRelative(prop, relativePath);
+        protected SerializedProperty PropRelative(SerializedProperty prop, string relativePath) => prop == null ? PropRelative(relativePath) : FindPropertyRelative(prop, relativePath);
 
 
         protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
@@ -504,6 +507,10 @@ namespace SETB.SuperClasses
                 { propertyType: SerializedPropertyType.Float } => (E)(object)prop.floatValue,
                 { propertyType: SerializedPropertyType.Boolean } => (E)(object)prop.boolValue,
                 { propertyType: SerializedPropertyType.String } => (E)(object)prop.stringValue,
+                { propertyType: SerializedPropertyType.Color } => (E)(object)prop.colorValue,
+                { propertyType: SerializedPropertyType.Vector2 } => (E)(object)prop.vector2Value,
+                { propertyType: SerializedPropertyType.Vector3 } => (E)(object)prop.vector3Value,
+                { propertyType: SerializedPropertyType.ObjectReference } => (E)(object)prop.objectReferenceValue,
                 _ => default
             };
         }
@@ -517,7 +524,7 @@ namespace SETB.SuperClasses
                 case SerializedPropertyType.Integer:
                     prop.intValue = Convert.ToInt32(value);
                     break;
-                    
+
                 case SerializedPropertyType.Float:
                     prop.floatValue = Convert.ToSingle(value);
                     break;
@@ -528,6 +535,22 @@ namespace SETB.SuperClasses
 
                 case SerializedPropertyType.String:
                     prop.stringValue = value?.ToString();
+                    break;
+
+                case SerializedPropertyType.Color:
+                    if (value is Color c) prop.colorValue = c;
+                    break;
+
+                case SerializedPropertyType.Vector2:
+                    if (value is Vector2 v2) prop.vector2Value = v2;
+                    break;
+
+                case SerializedPropertyType.Vector3:
+                    if (value is Vector3 v3) prop.vector3Value = v3;
+                    break;
+
+                case SerializedPropertyType.ObjectReference:
+                    if (value is UnityEngine.Object obj) prop.objectReferenceValue = obj;
                     break;
             }
         }

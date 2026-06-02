@@ -518,10 +518,14 @@ namespace SETB
 
         public static void DrawInputUInt(string label, ref uint value, GUIStyle style = null, params GUILayoutOption[] options)
         {
-            value = EditorGUILayout.RenderingLayerMaskField(label, value, style ?? EditorStyles.numberField, options);
+            long raw = EditorGUILayout.LongField(label, value, style ?? EditorStyles.numberField, options);
+            value = (uint)Mathf.Clamp(raw, uint.MinValue, uint.MaxValue);
         }
         public static uint DrawInputUInt(string label, uint value, GUIStyle style = null, params GUILayoutOption[] options)
-            => EditorGUILayout.RenderingLayerMaskField(label, value, style ?? EditorStyles.numberField, options);
+        {
+            long raw = EditorGUILayout.LongField(label, value, style ?? EditorStyles.numberField, options);
+            return (uint)Mathf.Clamp(raw, uint.MinValue, uint.MaxValue);
+        }
         #endregion
         #endregion
 
@@ -1221,6 +1225,12 @@ namespace SETB
             }
             return false;
         }
+
+
+        public static void Validate(bool condition, string message, MessageType type = MessageType.Warning)
+        {
+            if (!condition) EditorGUILayout.HelpBox(message, type);
+        }
         #endregion
     }
 
@@ -1235,13 +1245,7 @@ namespace SETB
         public GUILayoutOption[] ItemOptions { get; set; } = Array.Empty<GUILayoutOption>();
 
 
-        public List_GUILayoutOptions()
-        {
-            SearchOptions = Array.Empty<GUILayoutOption>();
-            HeaderOptions = Array.Empty<GUILayoutOption>();
-            ScrollOptions = Array.Empty<GUILayoutOption>();
-            ItemOptions = Array.Empty<GUILayoutOption>();
-        }
+        public List_GUILayoutOptions() { }
 
         public List_GUILayoutOptions(List_GUILayoutOptions other)
         {
@@ -1260,12 +1264,7 @@ namespace SETB
         public GUIStyle ItemStyle { get; set; } = EditorStyles.label;
 
 
-        public List_GUIStyles()
-        {
-            SearchStyle = EditorStyles.textField;
-            HeaderStyle = EditorStyles.foldoutHeader;
-            ItemStyle = EditorStyles.label;
-        }
+        public List_GUIStyles() { }
 
         public List_GUIStyles(List_GUIStyles other)
         {

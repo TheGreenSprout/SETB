@@ -17,16 +17,6 @@ namespace SETB
     public static class HandyEditorFunctions
     {
         #region Variables
-        public enum AssetTypes
-        {
-            AudioClip,
-            Texture2D,
-            Sprite,
-            Font
-        }
-
-
-
         private static string ProjectGUID = null;
 
         public static string GetProjectGUID()
@@ -84,8 +74,6 @@ namespace SETB
         #endregion
         public static T FindAssetByName<T>(string name) where T : UnityEngine.Object
         {
-            #if UNITY_EDITOR
-            
             string[] guids = AssetDatabase.FindAssets(name + " t:" + typeof(T).Name);
 
             if (guids.Length > 0)
@@ -93,17 +81,7 @@ namespace SETB
                 string path = AssetDatabase.GUIDToAssetPath(guids[0]);
                 return AssetDatabase.LoadAssetAtPath<T>(path);
             }
-            else
-            {
-                Debug.LogWarning($"Asset of type {typeof(T).Name} with name '{name}' not found.");
-            }
-
-            #endif
-
-
-            #if !UNITY_EDITOR
-            throw new InvalidOperationException("FindAssetByName can only be used in the Unity Editor.");
-            #endif
+            else Debug.LogWarning($"Asset of type {typeof(T).Name} with name '{name}' not found.");
 
 
             return null;
@@ -118,7 +96,6 @@ namespace SETB
         #endregion
         public static void TryPlaySound(AudioClip sound = null)
         {
-            // If sound is null, play default beep
             if (sound == null)
             {
                 EditorApplication.Beep();
@@ -154,7 +131,6 @@ namespace SETB
             }
 
 
-            // Fallback
             Debug.LogWarning("Could not find AudioUtil.PlayPreviewClip; playing default beep.");
 
             EditorApplication.Beep();
@@ -256,7 +232,7 @@ namespace SETB
                 SetEditorPref(newKey, hex, null);
             }
             else if (typeof(T).IsEnum) EditorPrefs.SetString(newKey, value.ToString());
-            else if (!typeof(T).IsSerializable)
+            else if (typeof(T).IsSerializable)
             {
                 string json = JsonUtility.ToJson(value);
                 EditorPrefs.SetString(newKey, json);
@@ -407,7 +383,7 @@ namespace SETB
                         {
                             if (EditorPrefs.GetInt(fullKey, int.MinValue) != int.MinValue) EditorPrefs.SetInt(newKey, EditorPrefs.GetInt(fullKey));
                             else if (EditorPrefs.GetFloat(fullKey, float.MinValue) != float.MinValue) EditorPrefs.SetFloat(newKey, EditorPrefs.GetFloat(fullKey));
-                            else if (EditorPrefs.GetBool(fullKey, false) || EditorPrefs.GetBool(fullKey, true)) EditorPrefs.SetBool(newKey, EditorPrefs.GetBool(fullKey));
+                            else EditorPrefs.SetBool(newKey, EditorPrefs.GetBool(fullKey));
                         }
 
                         EditorPrefs.DeleteKey(fullKey);

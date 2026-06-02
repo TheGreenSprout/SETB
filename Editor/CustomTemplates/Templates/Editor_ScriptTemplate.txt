@@ -10,12 +10,14 @@ using static SETB.HandyEditorFunctions;
 //[CustomEditor(typeof(ClassName), true /*Children Scripts are affected*/)]
 public class #SCRIPTNAME# : Editor_Base<#SCRIPTNAME#>
 {
+    #region Main
     protected override void DrawInspector()
     {
         base.DrawInspector(); // Draws the default inspector. Remove this line if you want custom logic.
 
         // Your custom inspector code goes here.
     }
+    #endregion
 }
 #NAMESPACE_END#
 #endif

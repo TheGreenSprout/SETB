@@ -9,6 +9,7 @@ using static SETB.HandyEditorFunctions;
 #NAMESPACE_START#
 public class #SCRIPTNAME# : EditorWindow_Base<#SCRIPTNAME#>
 {
+    #region Main
     [MenuItem("Tools/...")]
     public static void ShowWindow() => CreateWindow("Window Title");
 
@@ -17,6 +18,7 @@ public class #SCRIPTNAME# : EditorWindow_Base<#SCRIPTNAME#>
     {
         
     }
+    #endregion
 }
 #NAMESPACE_END#
 #endif

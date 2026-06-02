@@ -63,7 +63,10 @@ namespace SETB
         public static IEnumerable<System.Type> EnumerateAllChildrenAndSelf<T>(T baseType) where T : System.Type
             => GetAllChildrenAndSelf(baseType);
         public static List<System.Type> GetAllChildrenAndSelf<T>(T baseType) where T : System.Type
-            => new(GetAllChildrenAndSelfTypeCollection(baseType));
+        {
+            var list = new List<System.Type>(GetAllChildrenTypeCollection<T>()) { baseType };
+            return list;
+        }
         public static TypeCache.TypeCollection GetAllChildrenAndSelfTypeCollection<T>(T baseType) where T : System.Type
         {
             var ret = GetAllChildrenTypeCollection<T>();

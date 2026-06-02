@@ -28,8 +28,9 @@ public class #SCRIPTNAME# : PropertyDrawer_Base<#SCRIPTNAME#>
 
 
 
-    protected override void Build(SerializedProperty property)
-        => DrawManagedReferenceDropdown(property, "Gradient Type", types, typeNames);
+    #region Main
+    protected override void Build(SerializedProperty property) => DrawManagedReferenceDropdown(property, "Gradient Type", types, typeNames);
+    #endregion
 }
 #NAMESPACE_END#
 #endif

@@ -18,10 +18,19 @@ namespace SETB.SuperClasses
 
 
 
-        #region Unity Methods
-        protected virtual void OnEnable() => this.Load_AttributeEditorPrefs();
-        
-        protected virtual void OnDisable() => this.Save_AttributeEditorPrefs();
+        #region Main
+        protected virtual void OnEnable()
+        {
+            this.Load_AttributeEditorPrefs();
+            SceneView.duringSceneGui += OnSceneGUIInternal;
+        }
+
+        protected virtual void OnDisable()
+        {
+            this.Save_AttributeEditorPrefs();
+            SceneView.duringSceneGui -= OnSceneGUIInternal;
+        }
+        protected virtual void OnDestroy() { }
 
 
         public override void OnInspectorGUI()
@@ -33,7 +42,19 @@ namespace SETB.SuperClasses
             serializedObject.ApplyModifiedProperties();
         }
 
+        #region XML doc
+        /// <summary>
+        /// Override this to draw your inspector content.
+        /// Called inside OnInspectorGUI, which already wraps it with
+        /// serializedObject.Update() and ApplyModifiedProperties().
+        /// Do not call those manually inside this method.
+        /// </summary>
+        #endregion
         protected virtual void DrawInspector() => DrawDefaultInspector();
+
+
+        private void OnSceneGUIInternal(SceneView sv) => OnSceneGUI();
+        protected virtual void OnSceneGUI() { }
         #endregion
     
         
@@ -111,15 +132,6 @@ namespace SETB.SuperClasses
 
 
         protected void RecordTarget(string name = "Inspector Change") => Record(target, name);
-        #endregion
-
-
-
-        #region Misc
-        protected void Validate(bool condition, string message, MessageType type = MessageType.Warning)
-        {
-            if (!condition) EditorGUILayout.HelpBox(message, type);
-        }
         #endregion
     }
 }
