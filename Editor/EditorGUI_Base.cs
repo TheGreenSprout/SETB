@@ -11,6 +11,35 @@ namespace SETB
 {
     public static class EditorGUI_Base
     {
+        #region Variables
+        #region XML doc
+        /// <summary>
+        /// Result of a DrawInlineRename call: whether the user committed, cancelled, or is still typing.
+        /// </summary>
+        #endregion
+        public enum InlineRenameResult
+        {
+            None,
+            Commit,
+            Cancel
+        }
+
+
+
+        #region XML doc
+        /// <summary>
+        /// Sentinel width/height for SplitColumns/SplitRows/PackRightToLeft: "absorb whatever
+        /// space remains along the split axis." Safe as a sentinel since no real Rect dimension
+        /// is negative. Only the first Remaining-flagged slot per call absorbs the leftover
+        /// space; any further ones get 0.
+        /// </summary>
+        #endregion
+        public const float Remaining = -1f;
+        #endregion
+
+
+
+
         #region Layout Helpers
         #region XML doc
         /// <summary>
@@ -157,13 +186,110 @@ namespace SETB
 
             EditorGUILayout.EndScrollView();
         }
+
+
+        #region XML doc
+        /// <summary>
+        /// Splits a rect into left-to-right vertical strips.
+        /// </summary>
+        /// <param name="area">The rect to split.</param>
+        /// <param name="gap">The gap between strips.</param>
+        /// <param name="widths">Each strip's fixed width, or Remaining to absorb leftover space.</param>
+        /// <returns>Returns one Rect per requested width, each spanning the full height of area.</returns>
+        #endregion
+        public static Rect[] SplitColumns(Rect area, float gap, params float[] widths)
+        {
+            var rects = new Rect[widths.Length];
+
+            float fixedTotal = 0f;
+            int remainingCount = 0;
+            for (int i = 0; i < widths.Length; i++)
+            {
+                if (widths[i] == Remaining) remainingCount++;
+                else fixedTotal += widths[i];
+            }
+            fixedTotal += gap * Mathf.Max(0, widths.Length - 1);
+
+            float remainingW = remainingCount > 0 ? Mathf.Max(0f, area.width - fixedTotal) / remainingCount : 0f;
+
+            float x = area.x;
+            for (int i = 0; i < widths.Length; i++)
+            {
+                float w = widths[i] == Remaining ? remainingW : widths[i];
+                rects[i] = new Rect(x, area.y, w, area.height);
+                x += w + gap;
+            }
+
+            return rects;
+        }
+
+        #region XML doc
+        /// <summary>
+        /// Splits a rect into top-to-bottom horizontal strips.
+        /// </summary>
+        /// <param name="area">The rect to split.</param>
+        /// <param name="gap">The gap between strips.</param>
+        /// <param name="heights">Each strip's fixed height, or Remaining to absorb leftover space.</param>
+        /// <returns>Returns one Rect per requested height, each spanning the full width of area.</returns>
+        #endregion
+        public static Rect[] SplitRows(Rect area, float gap, params float[] heights)
+        {
+            var rects = new Rect[heights.Length];
+
+            float fixedTotal = 0f;
+            int remainingCount = 0;
+            for (int i = 0; i < heights.Length; i++)
+            {
+                if (heights[i] == Remaining) remainingCount++;
+                else fixedTotal += heights[i];
+            }
+            fixedTotal += gap * Mathf.Max(0, heights.Length - 1);
+
+            float remainingH = remainingCount > 0 ? Mathf.Max(0f, area.height - fixedTotal) / remainingCount : 0f;
+
+            float y = area.y;
+            for (int i = 0; i < heights.Length; i++)
+            {
+                float h = heights[i] == Remaining ? remainingH : heights[i];
+                rects[i] = new Rect(area.x, y, area.width, h);
+                y += h + gap;
+            }
+
+            return rects;
+        }
+
+        #region XML doc
+        /// <summary>
+        /// Lays out fixed-width slots anchored to the right edge of area, packed leftward (e.g.
+        /// a toolbar's button row). Slots are given in natural left-to-right reading order and
+        /// returned in that same order, even though placement is computed right-to-left.
+        /// </summary>
+        /// <param name="area">The rect to anchor against.</param>
+        /// <param name="gap">The gap between slots.</param>
+        /// <param name="inset">Shrinks each slot's top/bottom by this much.</param>
+        /// <param name="widths">Each slot's fixed width, in left-to-right order.</param>
+        /// <returns>Returns one Rect per requested width, in the same order as widths.</returns>
+        #endregion
+        public static Rect[] PackRightToLeft(Rect area, float gap, float inset, params float[] widths)
+        {
+            var rects = new Rect[widths.Length];
+            float rx = area.xMax;
+
+            for (int i = widths.Length - 1; i >= 0; i--)
+            {
+                rx -= widths[i];
+                rects[i] = new Rect(rx, area.y + inset, widths[i], area.height - inset * 2f);
+                rx -= gap;
+            }
+
+            return rects;
+        }
         #endregion
 
 
 
         #region General Display
-        public static void DrawImage(Texture2D image, GUIStyle style = null, params GUILayoutOption[] options)
-            => GUILayout.Label(image, style ?? GUIStyle.none, options);
+        public static void DrawImage(Texture2D image, GUIStyle style = null, params GUILayoutOption[] options) => GUILayout.Label(image, style ?? GUIStyle.none, options);
         #endregion
 
 
@@ -616,6 +742,43 @@ namespace SETB
             if (state) logic?.Invoke();
 
             EditorGUILayout.EndFoldoutHeaderGroup();
+        }
+
+
+        #region XML doc
+        /// <summary>
+        /// Draws a text field for renaming something in place. Commits on Return/KeypadEnter or
+        /// clicking away from the field; cancels on Escape. The caller owns buffer's persistence
+        /// and is responsible for applying/discarding it and clearing its own "currently renaming"
+        /// state in both the Commit and Cancel cases — this only draws and reports intent.
+        /// </summary>
+        /// <param name="rect">Where to draw the text field.</param>
+        /// <param name="buffer">The text being edited; the caller owns its storage.</param>
+        /// <param name="controlName">Must be unique among concurrently-active renames in the same window.</param>
+        /// <returns>Returns Commit, Cancel, or None (still typing).</returns>
+        #endregion
+        public static InlineRenameResult DrawInlineRename(Rect rect, ref string buffer, string controlName)
+        {
+            bool commit = Event.current.type == EventType.KeyDown && (Event.current.keyCode == KeyCode.Return || Event.current.keyCode == KeyCode.KeypadEnter);
+            bool cancel = Event.current.type == EventType.KeyDown && Event.current.keyCode == KeyCode.Escape;
+
+            GUI.SetNextControlName(controlName);
+            buffer = GUI.TextField(rect, buffer);
+            if (GUI.GetNameOfFocusedControl() != controlName) GUI.FocusControl(controlName);
+
+            bool clickAway = Event.current.type == EventType.MouseDown && !rect.Contains(Event.current.mousePosition);
+
+            if (cancel)
+            {
+                Event.current.Use();
+                return InlineRenameResult.Cancel;
+            }
+            if (commit || clickAway)
+            {
+                if (commit) Event.current.Use();
+                return InlineRenameResult.Commit;
+            }
+            return InlineRenameResult.None;
         }
         #endregion
 
@@ -1233,6 +1396,7 @@ namespace SETB
         }
         #endregion
     }
+
 
 
 

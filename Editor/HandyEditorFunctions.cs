@@ -670,11 +670,47 @@ namespace SETB
 
         public static void UtilitySetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
         public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
-        #endregion
-    
-    
 
-        
+
+        #region XML doc
+        /// <summary>
+        /// Shows a 3-way Save/Cancel/Discard dialog when there are unsaved changes, e.g. before
+        /// switching away from a dirty asset/document.
+        /// </summary>
+        /// <param name="isDirty">When false, the dialog is skipped entirely and this returns true.</param>
+        /// <param name="title">The dialog's title.</param>
+        /// <param name="subjectDescription">The full noun phrase to quote in the message, e.g. "Settings asset \"Foo\"".</param>
+        /// <param name="actionDescription">The action being confirmed, e.g. "switching assets".</param>
+        /// <param name="onSave">Invoked when the user picks Save.</param>
+        /// <returns>Returns false only when the user picks Cancel; true for Save (after invoking onSave) or Discard.</returns>
+        #endregion
+        public static bool ConfirmDiscardChanges(bool isDirty, string title, string subjectDescription, string actionDescription, Action onSave)
+        {
+            if (!isDirty) return true;
+
+
+            int choice = EditorUtility.DisplayDialogComplex(title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", "Save", "Cancel", "Discard");
+
+            switch (choice)
+            {
+                // Save
+                case 0:
+                    onSave?.Invoke();
+                    return true;
+
+                // Cancel
+                case 1:
+                    return false;
+                
+                // Discard
+                default:
+                    return true;
+            }
+        }
+        #endregion
+
+
+
         #region Quick Tools
         [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/ClearEditorPrefs")]
         private static void ClearEditorPrefs()
