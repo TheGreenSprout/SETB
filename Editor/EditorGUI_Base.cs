@@ -80,6 +80,25 @@ namespace SETB
         }
 
 
+        public static void ExpandWidth(Action content, params GUILayoutOption[] options)
+        {
+            var newOptions = new GUILayoutOption[options.Length + 1];
+            options.CopyTo(newOptions, 0);
+            newOptions[options.Length] = GUILayout.ExpandWidth(true);
+
+            Horizontal(() => content?.Invoke(), options: newOptions);
+        }
+
+        public static void ExpandHeight(Action content, params GUILayoutOption[] options)
+        {
+            var newOptions = new GUILayoutOption[options.Length + 1];
+            options.CopyTo(newOptions, 0);
+            newOptions[options.Length] = GUILayout.ExpandHeight(true);
+
+            Vertical(() => content?.Invoke(), options: newOptions);
+        }
+
+
         #region XML doc
         /// <summary>
         /// Instantiates a flexible space.

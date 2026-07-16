@@ -87,6 +87,7 @@ namespace SETB
             return scrollSpaceMouseY;
         }
 
+
         #region XML doc
         /// <summary>
         /// Draws the standard alternating-stripe / selected-highlight row background. Call this
@@ -99,8 +100,7 @@ namespace SETB
         /// <param name="evenColor">Override for the even-row (non-alternate) background color.</param>
         /// <param name="oddColor">Override for the odd-row (alternate) background color.</param>
         #endregion
-        public static void DrawRowBackground(Rect row, bool selected, bool alternateStripe,
-            Color? selectedColor = null, Color? evenColor = null, Color? oddColor = null)
+        public static void DrawRowBackground(Rect row, bool selected, bool alternateStripe, Color? selectedColor = null, Color? evenColor = null, Color? oddColor = null)
         {
             Color bg = selected
                 ? (selectedColor ?? new Color(0.22f, 0.48f, 0.85f, 1f))

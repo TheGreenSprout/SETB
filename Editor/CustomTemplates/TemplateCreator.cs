@@ -106,19 +106,19 @@ namespace SETB.CustomTemplates
 
 
         #region Template Creation Methods
-        [MenuItem("Assets/Create/Scripting/SETB/EditorWindow Script", false, 80)]
+        [MenuItem("Assets/Create/SETB/Scripting/EditorWindow Script", false, 80)]
         public static void Create_EditorWindowScript() => CreateScriptFromTemplate("EditorWindow_ScriptTemplate", "NewEditorWindowScript.cs");
 
 
-        [MenuItem("Assets/Create/Scripting/SETB/Editor Script", false, 80)]
+        [MenuItem("Assets/Create/SETB/Scripting/Editor Script", false, 80)]
         public static void Create_EditorScript() => CreateScriptFromTemplate("Editor_ScriptTemplate", "NewEditorScript.cs");
 
 
-        [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Script", false, 80)]
+        [MenuItem("Assets/Create/SETB/Scripting/PropertyDrawer Script", false, 80)]
         public static void Create_PropertyDrawerScript() => CreateScriptFromTemplate("PropertyDrawer_ScriptTemplate", "NewPropertyDrawerScript.cs");
 
 
-        [MenuItem("Assets/Create/Scripting/SETB/PropertyDrawer Managed Reference Script", false, 80)]
+        [MenuItem("Assets/Create/SETB/Scripting/PropertyDrawer Managed Reference Script", false, 80)]
         public static void Create_PropertyDrawerManagedReferenceScript() => CreateScriptFromTemplate("PropertyDrawer_ManagedReference_ScriptTemplate", "NewPropertyDrawerManagedReferenceScript.cs");
         #endregion
     }

@@ -47,6 +47,7 @@ namespace SETB
         public void Begin(int index)
         {
             active = true;
+            
             fromIndex = index;
         }
         #endregion
