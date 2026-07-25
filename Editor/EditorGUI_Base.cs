@@ -73,11 +73,12 @@ namespace SETB
         /// </summary>
         /// <param name="thickness">The thickness of the separator.</param>
         #endregion
-        public static void DrawSeparator(float thickness = 1f)
+        public static void DrawSeparator(float thickness = 1f, Color? color = null)
         {
             Rect rect = EditorGUILayout.GetControlRect(false, thickness);
-            EditorGUI.DrawRect(rect, new Color(0.3f, 0.3f, 0.3f));
+            EditorGUI.DrawRect(rect, color ?? Color.black);
         }
+        public static void DrawSeparator(Rect rect, Color color) => EditorGUI.DrawRect(rect, color);
 
 
         public static void ExpandWidth(Action content, params GUILayoutOption[] options)
