@@ -21,7 +21,7 @@ This package is very simple, it just provides a few bases for creating Unity Edi
 
 
 ***
-### + Current Version: 2.7.2
+### + Current Version: 2.7.3
 ### - Update Date: 25-07-2026
 ### - Creation Date: 12-09-2025
 ***

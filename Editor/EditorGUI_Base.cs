@@ -76,9 +76,8 @@ namespace SETB
         public static void DrawSeparator(float thickness = 1f, Color? color = null)
         {
             Rect rect = EditorGUILayout.GetControlRect(false, thickness);
-            EditorGUI.DrawRect(rect, color ?? Color.black);
+            DrawRect(rect, color ?? Color.black);
         }
-        public static void DrawSeparator(Rect rect, Color color) => EditorGUI.DrawRect(rect, color);
 
 
         public static void ExpandWidth(Action content, params GUILayoutOption[] options)
