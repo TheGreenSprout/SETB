@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
+using Alchemy.Editor;
 
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
 
 namespace SETB.SuperClasses
 {
-    public abstract class Editor_Base<T> : Editor where T : Editor_Base<T>
+    public abstract class Editor_Base<T> : AlchemyEditor where T : Editor_Base<T>
     {
         #region Variables
         private string cacheSaveStr = "";
