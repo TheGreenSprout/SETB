@@ -13,15 +13,24 @@ This package is very simple, it just provides a few bases for creating Unity Edi
 
 
 ***
-⚠️‼️ AI ASSISTED CODE
-    - This package contains some AI assisted code. All scripts with AI assistance present will have a warning at the very top!
+## ⚠️ This package requires Alchemy.
+####        To install Alchemy:
+#####           - Open [Window > Package Manager]
+#####           - Click the "+" sign and "Install package by git URL..."
+#####           - Type "https://github.com/annulusgames/Alchemy.git?path=/Alchemy/Assets/Alchemy" and click "Install".
+<br><br>
+
+
+
+️## ⚠️‼️ AI ASSISTED CODE
+###     - This package contains some AI assisted code. All scripts with AI assistance present will have a warning at the very top!
 ***
 <br><br><br><br>
 
 
 
 ***
-### + Current Version: 2.7.4
+### + Current Version: 2.7.5
 ### - Update Date: 27-07-2026
 ### - Creation Date: 12-09-2025
 ***

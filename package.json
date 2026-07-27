@@ -1,11 +1,8 @@
 {
     "name": "com.sproutinggames.sprouts.etb",
-    "version": "2.7.4",
+    "version": "2.7.5",
     "displayName": "SproutsETB",
     "description": "A base for editor tools!",
-    "dependencies": {
-      "com.annulusgames.alchemy": "https://github.com/annulusgames/Alchemy.git?path=/Alchemy/Assets/Alchemy"
-    },
     "author": {
       "name": "TheGreenSprout",
       "email": "sprouting.games@gmail.com",
