@@ -2,7 +2,8 @@
     "name": "Sprouts.ETB.Editor",
     "rootNamespace": "SETB",
     "references": [
-        "GUID:5fd453cd0d182422093c4a764fd5eadb"
+        "GUID:5fd453cd0d182422093c4a764fd5eadb",
+        "GUID:88be65f96b86746888c927a5c8ff3534"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

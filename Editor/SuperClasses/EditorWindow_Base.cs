@@ -2,7 +2,6 @@
 using UnityEditor;
 using UnityEngine;
 using System.Collections.Generic;
-using Alchemy.Editor;
 
 using static SETB.EditorGUI_Base;
 using static SETB.HandyEditorFunctions;
@@ -14,7 +13,7 @@ namespace SETB.SuperClasses
     /// Class containing all the basics (and no so basics) for making editor tools.
     /// </summary>
     #endregion
-    public abstract class EditorWindow_Base<T> : AlchemyEditorWindow where T : EditorWindow_Base<T>
+    public abstract class EditorWindow_Base<T> : EditorWindow where T : EditorWindow_Base<T>
     {
         #region Variables
         private Rect? originalRect = null;
