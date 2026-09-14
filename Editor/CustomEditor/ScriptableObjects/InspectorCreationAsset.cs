@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using UnityEngine;
+
 using Alchemy.Inspector;
 
 using SETB.InnerWorkings;
@@ -12,6 +13,8 @@ namespace SETB._CustomEditor.ScriptableObjects
     {
         [HideInInspector] public string lastName;
 
+
+        public bool removeMethodsOnDelete = true;
 
         public InspectorCreationData[] data;
 
