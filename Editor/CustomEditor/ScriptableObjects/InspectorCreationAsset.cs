@@ -19,6 +19,9 @@ namespace SETB._CustomEditor.ScriptableObjects
 
         [Button]
         public void GenerateMethods() => lastName = InspectorCreation_InnerWorkings.GenerateMethods(this, lastName);
+
+        [Button]
+        public void DeleteMethods() => lastName = InspectorCreation_InnerWorkings.GenerateMethods(this, lastName);
     }
 
 
