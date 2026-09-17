@@ -672,6 +672,19 @@ namespace SETB
         public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
 
 
+        public static bool ConfirmDiscardChanges_Simple(bool isDirty, string title, string subjectDescription, string actionDescription, Action onOk, string save = "Save", string cancel = "Cancel")
+            => ConfirmDiscardChanges_Simple(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onOk, save, cancel);
+        public static bool ConfirmDiscardChanges_Simple(bool isDirty, string title, string message, Action onOk, string agree = "Ok", string disagree = "No")
+        {
+            if (!isDirty) return true;
+
+
+            bool choice = EditorUtility.DisplayDialog(title, message, agree, disagree);
+
+            if (choice) onOk?.Invoke();
+            return choice;
+        }
+
         #region XML doc
         /// <summary>
         /// Shows a 3-way Save/Cancel/Discard dialog when there are unsaved changes, e.g. before
@@ -684,12 +697,14 @@ namespace SETB
         /// <param name="onSave">Invoked when the user picks Save.</param>
         /// <returns>Returns false only when the user picks Cancel; true for Save (after invoking onSave) or Discard.</returns>
         #endregion
-        public static bool ConfirmDiscardChanges(bool isDirty, string title, string subjectDescription, string actionDescription, Action onSave)
+        public static bool? ConfirmDiscardChanges(bool isDirty, string title, string subjectDescription, string actionDescription, Action onSave, string save = "Save", string cancel = "Cancel", string discard = "Discard")
+            => ConfirmDiscardChanges(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onSave, save, cancel, discard);
+        public static bool? ConfirmDiscardChanges(bool isDirty, string title, string message, Action onSave, string agree = "Save", string cancel = "Cancel", string disagree = "Discard")
         {
             if (!isDirty) return true;
 
 
-            int choice = EditorUtility.DisplayDialogComplex(title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", "Save", "Cancel", "Discard");
+            int choice = EditorUtility.DisplayDialogComplex(title, message, agree, cancel, disagree);
 
             switch (choice)
             {
@@ -704,7 +719,7 @@ namespace SETB
                 
                 // Discard
                 default:
-                    return true;
+                    return null;
             }
         }
         #endregion
