@@ -672,16 +672,17 @@ namespace SETB
         public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
 
 
-        public static bool ConfirmDiscardChanges_Simple(bool isDirty, string title, string subjectDescription, string actionDescription, Action onOk, string save = "Save", string cancel = "Cancel")
-            => ConfirmDiscardChanges_Simple(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onOk, save, cancel);
-        public static bool ConfirmDiscardChanges_Simple(bool isDirty, string title, string message, Action onOk, string agree = "Ok", string disagree = "No")
+        public static bool ConfirmCancel_Changes(bool isDirty, string title, string subjectDescription, string actionDescription, Action onConfirm, Action onCancel, string save = "Save", string cancel = "Cancel")
+            => ConfirmCancel_Changes(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onConfirm, onCancel, save, cancel);
+        public static bool ConfirmCancel_Changes(bool isDirty, string title, string message, Action onConfirm, Action onCancel, string agree = "Ok", string disagree = "No")
         {
             if (!isDirty) return true;
 
 
             bool choice = EditorUtility.DisplayDialog(title, message, agree, disagree);
 
-            if (choice) onOk?.Invoke();
+            if (choice) onConfirm?.Invoke();
+            else onCancel?.Invoke();
             return choice;
         }
 
@@ -697,9 +698,9 @@ namespace SETB
         /// <param name="onSave">Invoked when the user picks Save.</param>
         /// <returns>Returns false only when the user picks Cancel; true for Save (after invoking onSave) or Discard.</returns>
         #endregion
-        public static bool? ConfirmDiscardChanges(bool isDirty, string title, string subjectDescription, string actionDescription, Action onSave, string save = "Save", string cancel = "Cancel", string discard = "Discard")
-            => ConfirmDiscardChanges(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onSave, save, cancel, discard);
-        public static bool? ConfirmDiscardChanges(bool isDirty, string title, string message, Action onSave, string agree = "Save", string cancel = "Cancel", string disagree = "Discard")
+        public static bool? ConfirmCancelDiscard_Changes(bool isDirty, string title, string subjectDescription, string actionDescription, Action onConfirm, Action onCancel, Action onDiscard, string save = "Save", string cancel = "Cancel", string discard = "Discard")
+            => ConfirmCancelDiscard_Changes(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onConfirm, onCancel, onDiscard, save, cancel, discard);
+        public static bool? ConfirmCancelDiscard_Changes(bool isDirty, string title, string message, Action onConfirm, Action onCancel, Action onDiscard, string agree = "Save", string cancel = "Cancel", string disagree = "Discard")
         {
             if (!isDirty) return true;
 
@@ -710,15 +711,17 @@ namespace SETB
             {
                 // Save
                 case 0:
-                    onSave?.Invoke();
+                    onConfirm?.Invoke();
                     return true;
 
                 // Cancel
                 case 1:
+                    onCancel?.Invoke();
                     return false;
                 
                 // Discard
                 default:
+                    onDiscard?.Invoke();
                     return null;
             }
         }
