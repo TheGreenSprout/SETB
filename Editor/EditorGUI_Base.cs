@@ -51,7 +51,7 @@ namespace SETB
             public GUIContentWrapper(string name) => data = new(name);
             public GUIContentWrapper(string name, string description) => data = new (name, description);
 
-            public static implicit operator GUIContent(GUIContentWrapper w) => w.data ?? null;
+            public static implicit operator GUIContent(GUIContentWrapper w) => w?.data ?? null;
             public static implicit operator GUIContentWrapper(GUIContent content) => new GUIContentWrapper(content);
             public static implicit operator GUIContentWrapper(string name) => new GUIContentWrapper(name);
             #endregion
