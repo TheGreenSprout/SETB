@@ -30,7 +30,7 @@ This package is very simple, it just provides a few bases for creating Unity Edi
 
 
 ***
-### + Current Version: 2.8.5
+### + Current Version: 2.8.6
 ### - Update Date: 20-09-2026
 ### - Creation Date: 12-09-2025
 ***

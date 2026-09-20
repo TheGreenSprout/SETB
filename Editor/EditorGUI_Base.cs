@@ -549,7 +549,7 @@ namespace SETB
             style ??= EditorStyles.numberField;
 
             if (layerOrMask) value = displayedMaskOptions == null ? EditorGUILayout.LayerField(label, value, style, options)
-                                                                : EditorGUILayout.MaskField(new GUIContent(label), value, displayedMaskOptions, style, options);
+                                                                : EditorGUILayout.MaskField(label, value, displayedMaskOptions, style, options);
             else value = delayed ? EditorGUILayout.DelayedIntField(label, value, style, options) : EditorGUILayout.IntField(label, value, style, options);
         }
         public static int DrawInputInt(GUIContentWrapper label, int value, GUIStyle style = null, bool delayed = false, bool layerOrMask = false, string[] displayedMaskOptions = null, params GUILayoutOption[] options)
@@ -557,7 +557,7 @@ namespace SETB
             style ??= EditorStyles.numberField;
 
             if (layerOrMask) return displayedMaskOptions == null ? EditorGUILayout.LayerField(label, value, style, options)
-                                                                : EditorGUILayout.MaskField(new GUIContent(label), value, displayedMaskOptions, style, options);
+                                                                : EditorGUILayout.MaskField(label, value, displayedMaskOptions, style, options);
             else return delayed ? EditorGUILayout.DelayedIntField(label, value, style, options) : EditorGUILayout.IntField(label, value, style, options);
         }
 
@@ -595,7 +595,7 @@ namespace SETB
         public static void DrawInputMask(GUIContentWrapper label, ref int value, string[] displayedOptions, GUIStyle style = null, params GUILayoutOption[] options)
             => value = DrawInputMask(label, value, displayedOptions, style, options);
         public static int DrawInputMask(GUIContentWrapper label, int value, string[] displayedOptions, GUIStyle style = null, params GUILayoutOption[] options)
-            => EditorGUILayout.MaskField(new GUIContent(label), value, displayedOptions, style ?? EditorStyles.popup, options);
+            => EditorGUILayout.MaskField(label, value, displayedOptions, style ?? EditorStyles.popup, options);
 
         public static bool DrawInputProperty(GUIContentWrapper label, SerializedProperty property, bool includeChildren = true, params GUILayoutOption[] options)
             => EditorGUILayout.PropertyField(property, label, includeChildren, options);
@@ -707,7 +707,7 @@ namespace SETB
         #endregion
         public static bool DrawButton(GUIContentWrapper buttonName, Action logic = null, GUIStyle style = null, params GUILayoutOption[] options)
         {
-            bool button = style == null ? GUILayout.Button(buttonName, options) : GUILayout.Button(buttonName, style, options);
+            bool button = style == null ? GUILayout.Button(buttonName ?? GUIContent.none, options) : GUILayout.Button(buttonName ?? GUIContent.none, style, options);
             
             if (button) logic?.Invoke();
 
@@ -725,7 +725,7 @@ namespace SETB
         #endregion
         public static void DrawToggleGroup(GUIContentWrapper title, ref bool state, Action logic)
         {
-            state = EditorGUILayout.BeginToggleGroup(title, state);
+            state = EditorGUILayout.BeginToggleGroup(title ?? GUIContent.none, state);
 
             if (state) logic?.Invoke();
 
@@ -747,7 +747,7 @@ namespace SETB
             if (style == null) style = EditorStyles.foldout;
 
 
-            if (state = EditorGUILayout.Foldout(state, title, toggleOnClick, style)) logic?.Invoke();
+            if (state = EditorGUILayout.Foldout(state, title ?? GUIContent.none, toggleOnClick, style)) logic?.Invoke();
         }
         #region XML doc
         /// <summary>
@@ -765,7 +765,7 @@ namespace SETB
             if (style == null) style = EditorStyles.foldoutHeader;
 
 
-            state = EditorGUILayout.BeginFoldoutHeaderGroup(state, title, style, menuAction, menuIcon);
+            state = EditorGUILayout.BeginFoldoutHeaderGroup(state, title ?? GUIContent.none, style, menuAction, menuIcon);
 
             if (state) logic?.Invoke();
 
@@ -1303,7 +1303,7 @@ namespace SETB
                 Type e = typeof(E);
                 if (e == typeof(short) || e == typeof(int) || e == typeof(long))
                 {
-                    _value = (E)(object)EditorGUILayout.IntSlider(new GUIContent(label), (int)(object)_value, (int)(object)min, (int)(object)max, options);
+                    _value = (E)(object)EditorGUILayout.IntSlider(label, (int)(object)_value, (int)(object)min, (int)(object)max, options);
 
                     if (resetValuePresent)
                     {
@@ -1347,7 +1347,7 @@ namespace SETB
                 Type e = typeof(E);
                 if (e == typeof(short) || e == typeof(int) || e == typeof(long))
                 {
-                    _value = (E)(object)EditorGUILayout.IntSlider(new GUIContent(label), (int)(object)_value, (int)(object)min, (int)(object)max, options);
+                    _value = (E)(object)EditorGUILayout.IntSlider(label, (int)(object)_value, (int)(object)min, (int)(object)max, options);
 
                     if (resetValuePresent)
                     {
