@@ -406,9 +406,7 @@ namespace SETB
             string keyListKey = WithTrackedEditorPrefs((string[] keys) =>
             {
                 foreach (string key in keys)
-                {
                     if (HasEditorPref(key, null)) EditorPrefs.DeleteKey(key);
-                }
 
                 return null;
             });
@@ -671,6 +669,8 @@ namespace SETB
         public static void UtilitySetDirty(SerializedProperty property) => EditorUtility.SetDirty(property.serializedObject.targetObject);
         public static void UtilitySetDirty(UnityEngine.Object target) => EditorUtility.SetDirty(target);
 
+        public static bool UtilityIsDirty(UnityEngine.Object target) => EditorUtility.IsDirty(target);
+
 
         public static bool ConfirmCancel_Changes(bool isDirty, string title, string subjectDescription, string actionDescription, Action onConfirm = null, Action onCancel = null, string save = "Save", string cancel = "Cancel")
             => ConfirmCancel_Changes(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onConfirm, onCancel, save, cancel);
@@ -725,19 +725,34 @@ namespace SETB
                     return null;
             }
         }
+
+
+        public static string SaveFilePannel(string title, string directory, string defaultName, string extension)
+            => EditorUtility.SaveFilePanel(title, directory, defaultName, extension);
+
+        public static string SaveFilePannel_InProject(string title, string directory, string defaultName, string extension)
+            => EditorUtility.SaveFilePanelInProject(title, directory, defaultName, extension);
+
+        
+        #if UNITY_6000_3_OR_NEWER
+        public static UnityEngine.Object IdToObject(EntityId id) => EditorUtility.EntityIdToObject(id);
+        #else
+        public static UnityEngine.Object IdToObject(EntityId id) => EditorUtility.InstanceIDToObject(id);
+        #endif
+
         #endregion
 
 
 
         #region Quick Tools
-        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/ClearEditorPrefs")]
+        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/Clear EditorPrefs")]
         private static void ClearEditorPrefs()
             => PopupWindow("Are you sure? This will delete ALL EditorPrefs (not only from this project).",
                             250,
                             100,
                             new PopupOptions{CloseButtonLogic = EditorPrefs.DeleteAll, CloseButtonText = "YES"});
 
-        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/ClearTrackedEditorPrefs")]
+        [MenuItem("Tools/Sprout's Editor Tool Base/Quick Tools/Clear Tracked EditorPrefs")]
         private static void ClearTrackedEditorPrefs()
             => PopupWindow("Are you sure? This will delete ALL currently tracked EditorPrefs (in this project).",
                             250,
