@@ -672,13 +672,8 @@ namespace SETB
         public static bool UtilityIsDirty(UnityEngine.Object target) => EditorUtility.IsDirty(target);
 
 
-        public static bool ConfirmCancel_Changes(bool isDirty, string title, string subjectDescription, string actionDescription, Action onConfirm = null, Action onCancel = null, string save = "Save", string cancel = "Cancel")
-            => ConfirmCancel_Changes(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onConfirm, onCancel, save, cancel);
-        public static bool ConfirmCancel_Changes(bool isDirty, string title, string message, Action onConfirm = null, Action onCancel = null, string agree = "Ok", string disagree = "No")
+        public static bool ConfirmCancel_Changes(string title, string message, Action onConfirm = null, Action onCancel = null, string agree = "Ok", string disagree = "No")
         {
-            if (!isDirty) return true;
-
-
             bool choice = EditorUtility.DisplayDialog(title, message, agree, disagree);
 
             if (choice) onConfirm?.Invoke();
@@ -686,25 +681,8 @@ namespace SETB
             return choice;
         }
 
-        #region XML doc
-        /// <summary>
-        /// Shows a 3-way Save/Cancel/Discard dialog when there are unsaved changes, e.g. before
-        /// switching away from a dirty asset/document.
-        /// </summary>
-        /// <param name="isDirty">When false, the dialog is skipped entirely and this returns true.</param>
-        /// <param name="title">The dialog's title.</param>
-        /// <param name="subjectDescription">The full noun phrase to quote in the message, e.g. "Settings asset \"Foo\"".</param>
-        /// <param name="actionDescription">The action being confirmed, e.g. "switching assets".</param>
-        /// <param name="onSave">Invoked when the user picks Save.</param>
-        /// <returns>Returns false only when the user picks Cancel; true for Save (after invoking onSave) or Discard.</returns>
-        #endregion
-        public static bool? ConfirmCancelDiscard_Changes(bool isDirty, string title, string subjectDescription, string actionDescription, Action onConfirm = null, Action onCancel = null, Action onDiscard = null, string save = "Save", string cancel = "Cancel", string discard = "Discard")
-            => ConfirmCancelDiscard_Changes(isDirty, title, $"{subjectDescription} has unsaved changes.\nSave before {actionDescription}?", onConfirm, onCancel, onDiscard, save, cancel, discard);
-        public static bool? ConfirmCancelDiscard_Changes(bool isDirty, string title, string message, Action onConfirm = null, Action onCancel = null, Action onDiscard = null, string agree = "Save", string cancel = "Cancel", string disagree = "Discard")
+        public static bool? ConfirmCancelDiscard_Changes(string title, string message, Action onConfirm = null, Action onCancel = null, Action onDiscard = null, string agree = "Ok", string cancel = "Cancel", string disagree = "Discard")
         {
-            if (!isDirty) return true;
-
-
             int choice = EditorUtility.DisplayDialogComplex(title, message, agree, cancel, disagree);
 
             switch (choice)
