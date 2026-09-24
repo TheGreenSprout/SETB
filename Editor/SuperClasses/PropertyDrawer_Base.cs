@@ -410,7 +410,7 @@ namespace SETB.SuperClasses
             }
 
 
-            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, string label = null, LayoutContext context = null)
+            protected void DrawProperty(SerializedProperty prop, bool includeChildren = false, EditorGUI_Base.GUIContentWrapper label = null, LayoutContext context = null)
             {
                 Rect r = ReserveSpace(GetPropertyHeight(prop, includeChildren), context);
 
@@ -420,7 +420,7 @@ namespace SETB.SuperClasses
                 EditorGUI.PropertyField(
                     r,
                     prop,
-                    label == null ? GUIContent.none : new GUIContent(label),
+                    label,
                     includeChildren
                 );
             }

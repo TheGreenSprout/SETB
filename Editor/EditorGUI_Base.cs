@@ -599,6 +599,8 @@ namespace SETB
 
         public static bool DrawInputProperty(GUIContentWrapper label, SerializedProperty property, bool includeChildren = true, params GUILayoutOption[] options)
             => EditorGUILayout.PropertyField(property, label, includeChildren, options);
+        public static bool DrawInputProperty(SerializedProperty property, bool includeChildren = true, params GUILayoutOption[] options)
+            => EditorGUILayout.PropertyField(property, includeChildren, options);
 
         public static void DrawInputObject<T>(GUIContentWrapper label, ref T value, bool allowSceneObjects = true, params GUILayoutOption[] options) where T : UnityEngine.Object
             => value = (T)EditorGUILayout.ObjectField(label, value, typeof(T), allowSceneObjects, options);
