@@ -199,6 +199,17 @@ namespace SETB.InnerWorkings
             fileText = fileText.Remove(startIndex, endIndex - startIndex);
             fileText = fileText.Insert(startIndex, newBlock);
 
+            int classEndIndex = GetClassInsertIndex(fileText);
+            if (classEndIndex != -1)
+            {
+                int trimStart = classEndIndex;
+                while (trimStart > 0 && (fileText[trimStart - 1] == ' ' || fileText[trimStart - 1] == '\t'))
+                    trimStart--;
+
+                fileText = fileText.Remove(trimStart, classEndIndex - trimStart);
+                fileText = fileText.Insert(trimStart, "\t");
+            }
+
             File.WriteAllText(path, fileText);
 
 
