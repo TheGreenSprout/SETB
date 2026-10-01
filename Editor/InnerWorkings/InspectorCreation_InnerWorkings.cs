@@ -166,6 +166,7 @@ namespace SETB.InnerWorkings
 
             
             StringBuilder builder = new StringBuilder();
+            HashSet<string> usedNames = new HashSet<string>();
 
             for (int i = 0; i < d.Length; i++)
             {
@@ -173,7 +174,14 @@ namespace SETB.InnerWorkings
 
                 if (item == null || item.prefab == null) continue;
 
-                string methodName = item.prefab.name.Replace(" ", "");
+                string methodName = SanitizeMethodName(item.prefab.name);
+
+                if (!usedNames.Add(methodName))
+                {
+                    Debug.LogError($"Code generation skipped '{item.prefab.name}' (entry {i} of '{key}'): another entry already generates the method '{methodName}'. Rename one of the prefabs so they don't collide.");
+
+                    continue;
+                }
 
                 builder.AppendLine($"\t\t[MenuItem(\"GameObject/{item.path}\", {item.validateFunction.ToString().ToLower()}, {item.priority})]");
                 builder.AppendLine($"\t\tprivate static void {methodName}(MenuCommand menuCommand)");
@@ -191,17 +199,24 @@ namespace SETB.InnerWorkings
             fileText = fileText.Remove(startIndex, endIndex - startIndex);
             fileText = fileText.Insert(startIndex, newBlock);
 
-            
-            int classEndIndex = GetClassInsertIndex(fileText);
-            if (classEndIndex == -1) return;
-
-            fileText = fileText.Remove(classEndIndex, 1);
-            fileText = fileText.Insert(classEndIndex, $"\t}}");
-
             File.WriteAllText(path, fileText);
 
 
             AssetDatabase.Refresh();
+        }
+
+        private static string SanitizeMethodName(string name)
+        {
+            StringBuilder sb = new StringBuilder(name.Length);
+
+            foreach (char c in name)
+                if (char.IsLetterOrDigit(c) || c == '_') sb.Append(c);
+
+            string result = sb.ToString();
+
+            if (result.Length == 0 || char.IsDigit(result[0])) result = "_" + result;
+
+            return result;
         }
 
         private static void DeleteFile(string key)
@@ -235,10 +250,12 @@ namespace SETB.InnerWorkings
             int lineStart = startIndex;
             while (lineStart > 0 && (fileText[lineStart - 1] == ' ' || fileText[lineStart - 1] == '\t'))
                 lineStart--;
-            if (lineStart > 0 && fileText[lineStart - 1] == '\n') lineStart--;
+            if (lineStart >= 2 && fileText[lineStart - 2] == '\r' && fileText[lineStart - 1] == '\n') lineStart -= 2;
+            else if (lineStart > 0 && fileText[lineStart - 1] == '\n') lineStart--;
 
             int lineEnd = endIndex;
-            if (lineEnd < fileText.Length && fileText[lineEnd] == '\n') lineEnd++;
+            if (lineEnd + 1 < fileText.Length && fileText[lineEnd] == '\r' && fileText[lineEnd + 1] == '\n') lineEnd += 2;
+            else if (lineEnd < fileText.Length && fileText[lineEnd] == '\n') lineEnd++;
 
             fileText = fileText.Remove(lineStart, lineEnd - lineStart);
 
@@ -386,9 +403,6 @@ namespace SETB.InnerWorkings
             GameObjectUtility.SetParentAndAlign(instance, menuCommand.context as GameObject);
             Undo.RegisterCreatedObjectUndo(instance, "Create Prefab");
 
-            if (addRectTransformUnderCanvas && instance.transform.parent is RectTransform && instance.GetComponent<RectTransform>() == null)
-                instance.AddComponent<RectTransform>();
-
             if (unpack.Value)
             {
                 PrefabUtility.UnpackPrefabInstance(
@@ -397,6 +411,9 @@ namespace SETB.InnerWorkings
                     InteractionMode.UserAction
                 );
             }
+
+            if (addRectTransformUnderCanvas && unpack.Value && instance.transform.parent is RectTransform && instance.GetComponent<RectTransform>() == null)
+                instance.AddComponent<RectTransform>();
 
             Selection.activeObject = instance;
         }
