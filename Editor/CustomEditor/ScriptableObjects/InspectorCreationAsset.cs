@@ -43,6 +43,9 @@ namespace SETB._CustomEditor.ScriptableObjects
 
         public bool unpack = true;
 
+        [Tooltip("If the object ends up created under a RectTransform (like a Canvas), add a RectTransform to it too instead of leaving a plain Transform that the UI layout ignores.")]
+        public bool addRectTransformUnderCanvas = false;
+
 
 
         public InspectorCreationData()
@@ -51,6 +54,7 @@ namespace SETB._CustomEditor.ScriptableObjects
             priority = 50;
 
             unpack = true;
+            addRectTransformUnderCanvas = false;
         }
     }
 }

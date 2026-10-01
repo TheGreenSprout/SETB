@@ -363,9 +363,9 @@ namespace SETB.InnerWorkings
 
         #region Prefab Creation
         public void CreatePrefabFromIndex(string name, int index, MenuCommand menuCommand)
-            => CreatePrefab(data[name]?[index]?.prefab, menuCommand, data[name]?[index]?.unpack);
+            => CreatePrefab(data[name]?[index]?.prefab, menuCommand, data[name]?[index]?.unpack, data[name]?[index]?.addRectTransformUnderCanvas ?? false);
 
-        public static void CreatePrefab(GameObject prefab, MenuCommand menuCommand, bool? unpack)
+        public static void CreatePrefab(GameObject prefab, MenuCommand menuCommand, bool? unpack, bool addRectTransformUnderCanvas = false)
         {
             if (prefab == null)
             {
@@ -379,12 +379,15 @@ namespace SETB.InnerWorkings
 
                 return;
             }
-            
+
 
             GameObject instance = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
 
             GameObjectUtility.SetParentAndAlign(instance, menuCommand.context as GameObject);
             Undo.RegisterCreatedObjectUndo(instance, "Create Prefab");
+
+            if (addRectTransformUnderCanvas && instance.transform.parent is RectTransform && instance.GetComponent<RectTransform>() == null)
+                instance.AddComponent<RectTransform>();
 
             if (unpack.Value)
             {
